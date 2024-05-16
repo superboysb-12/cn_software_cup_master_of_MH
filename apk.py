@@ -1,12 +1,7 @@
 import os
 import datetime
 from androguard.misc import AnalyzeAPK
-
-def append(file_name,*args):
-    with open(file_name, "a") as file:
-        for content in args:
-            file.write(str(content) + "\n")
-
+import util
 
 # 定义 APK 文件夹路径
 apk_folder = "..\dataset\sex\sex"
@@ -27,8 +22,9 @@ for filename in os.listdir(apk_folder):
         print("版本名 (Version Name):", a.get_androidversion_name())
         print("版本号 (Version Code):", a.get_androidversion_code())
         print("应用签名 (App Signature):", a.get_signature_names())
+        print("APK MD5值", util.get_md5(a))
 
-        append(file_name,a.get_app_name(),a.get_permissions(),a.get_package(),a.get_androidversion_name(),a.get_androidversion_code(),a.get_signature_names())
+        util.append(file_name,a.get_app_name(),a.get_permissions(),a.get_package(),a.get_androidversion_name(),a.get_androidversion_code(),a.get_signature_names(),util.get_md5(a))
 
 
 

@@ -9,3 +9,7 @@ def get_md5(a):
         md5_values.append(cert_md5)
     return md5_values
 
+def append(file_name,*args):
+    with open(file_name, "a") as file:
+        for content in args:
+            file.write(str(content) + "\n")

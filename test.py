@@ -1,9 +1,19 @@
 import util
 from androguard.misc import AnalyzeAPK
+import os
+import datetime
 
-apk_path = "..\dataset\sex\sex\lm.apk"
 
-a, d, dx = AnalyzeAPK(apk_path)
+apk_folder = "..\dataset\sex\sex"
+current_time = datetime.datetime.now()
+file_name = 'apk_md5_values'
+with open(file_name, "w"):
+    pass
 
-print("APK MD5值", util.get_md5(a))
+for filename in os.listdir(apk_folder):
+    if filename.endswith(".apk"):
+        apk_path = os.path.join(apk_folder, filename)
 
+        a, d, dx = AnalyzeAPK(apk_path)
+
+    util.append(file_name,util.get_md5(a))
