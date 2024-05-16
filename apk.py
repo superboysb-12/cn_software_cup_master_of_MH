@@ -9,7 +9,7 @@ def append(file_name,*args):
 
 
 # 定义 APK 文件夹路径
-apk_folder = "sex/sex"
+apk_folder = "..\dataset\sex\sex"
 current_time = datetime.datetime.now()
 file_name = current_time.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
 with open(file_name, "w"):
