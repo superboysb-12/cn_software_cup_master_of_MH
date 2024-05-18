@@ -1,18 +1,15 @@
 import re
 from androguard.misc import AnalyzeAPK
 
-apk_path = "..\dataset\sex\sex\lm.apk"
-a, d, dx = AnalyzeAPK(apk_path)
 
-all_strings = set()
-for string in d[0].get_strings():
-    all_strings.add(string)
+def Get_Url(apk_path):
+    a, d, dx = AnalyzeAPK(apk_path)
+    package_name = a.get_app_name()
+    all_strings = set(d[0].get_strings())
+    url_pattern = re.compile(
+        r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
+    urls = [s for s in all_strings if url_pattern.match(s)]
+    urls.insert(0, f"{package_name}:")
 
-url_pattern = re.compile(
-    r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
+    return urls
 
-urls = [s for s in all_strings if url_pattern.match(s)]
-
-print("Extracted URLs:")
-for url in urls:
-    print(url)
