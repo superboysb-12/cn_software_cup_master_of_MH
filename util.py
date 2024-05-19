@@ -1,6 +1,13 @@
 import hashlib
 from androguard.misc import AnalyzeAPK
 import re
+import cv2
+from pyzbar.pyzbar import decode
+
+def get_qrcode(image_path):
+    img = cv2.imread(image_path)
+    decoded_objects = decode(img)
+    return decoded_objects
 
 def get_md5(a):
     certs = set(a.get_certificates_der_v2() + [a.get_certificate_der(x) for x in a.get_signature_names()])
