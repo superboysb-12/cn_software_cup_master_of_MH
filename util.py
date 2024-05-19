@@ -46,7 +46,7 @@ class APK:
 
         return chinese_strings
 
-    def Get_Url(self):
+    def get_url(self):
         package_name = self.a.get_app_name()
         all_strings = set(self.d[0].get_strings())
         url_pattern = re.compile(
