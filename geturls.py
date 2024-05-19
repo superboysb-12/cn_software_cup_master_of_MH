@@ -2,7 +2,7 @@ from url import Get_Url
 import os
 import datetime
 import util
-
+from androguard.misc import AnalyzeAPK
 
 apk_folder = "..\dataset\sex\sex"
 current_time = datetime.datetime.now()
@@ -13,8 +13,8 @@ with open(file_name, "w"):
 for filename in os.listdir(apk_folder):
     if filename.endswith(".apk"):
         apk_path = os.path.join(apk_folder, filename)
-
-        urls=Get_Url(apk_path)
+        a, d, dx = AnalyzeAPK(apk_path)
+        urls=Get_Url(a,d)
         for url in urls:
             util.append(file_name,url)
 
