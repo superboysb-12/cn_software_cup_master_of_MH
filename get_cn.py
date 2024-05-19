@@ -1,8 +1,7 @@
 import re
 from androguard.misc import AnalyzeAPK
 
-def Get_Cn(apk_path):
-    a, d, dx = AnalyzeAPK(apk_path)
+def Get_Cn(a,d):
     package_name = a.get_app_name()
     all_strings = set(d[0].get_strings())
     chinese_pattern = re.compile(r'[\u4e00-\u9fff]+')

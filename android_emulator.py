@@ -7,8 +7,9 @@ def create_emulator(emulator_name = "MyEmulator2",system_image = "system-images;
 
 # 启动模拟器
 def start_emulator(emulator_name = "MyEmulator"):
-    cmd = f"emulator -avd {emulator_name}"
-    subprocess.run(cmd, shell=True)
+    pass
+    #cmd = f"emulator -avd {emulator_name}"
+    #subprocess.run(cmd, shell=True)
 
 print(1)
 create_emulator()
