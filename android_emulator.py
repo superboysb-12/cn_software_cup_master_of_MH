@@ -10,9 +10,3 @@ def start_emulator(emulator_name = "MyEmulator"):
     pass
     #cmd = f"emulator -avd {emulator_name}"
     #subprocess.run(cmd, shell=True)
-
-print(1)
-create_emulator()
-print(2)
-start_emulator()
-print(3)
