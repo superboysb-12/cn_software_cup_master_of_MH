@@ -18,8 +18,8 @@ def process_permissions(df):
 
     return df
 
-df = pd.read_csv('../dataset/merged.csv', encoding='latin1')
+df = pd.read_csv('../dataset/merged.csv', encoding='gbk')
 
 df = process_permissions(df)
 
-df.to_csv('../dataset/new_merged.csv', index=False)
+df.to_csv('../dataset/new_merged.csv', index=False,encoding='gbk')
