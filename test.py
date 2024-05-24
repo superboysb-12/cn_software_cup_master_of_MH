@@ -1,17 +1,38 @@
+__author__ = 'Administrator'
+#-*- coding:GBK -*-
+import os
+import os.path
+import sys
 import subprocess
+import getFeatures
 
-# 创建模拟器
-def create_emulator(emulator_name = "MyEmulator2",system_image = "system-images;android-30;google_apis;x86_64"):
-    cmd = f"avdmanager create avd -n {emulator_name} -k {system_image}"
-    subprocess.run(cmd, shell=True)
+rootdir = "D:/Sample/Good//"
+destdir = "D:/Sample/workSample/badDone//"
+command = "java -jar D://apktool.jar"
+class Packages:
+    def __init__(self, srcdir, desdir):
+        self.sdir = srcdir
+        self.ddir = desdir
+    def check(self):
+        print("--------------------starting unpackage!---------------------")
+        for dirpath, dirnames, filenames in os.walk(rootdir):
+            for filename in filenames:
+                thefile = os.path.join(dirpath, filename)
+                apkfile = os.path.split(thefile)[1]
+                apkname = os.path.splitext(apkfile)[0]
+                print(apkfile)
+                try:
+                    if os.path.splitext(thefile)[1] == ".apk":
+                        # name = os.path.splitext(thefile)[0]
+                        str1= '"'+thefile+'"'
+                        str2= '"'+destdir + os.path.splitext(filename)[0]+'"'
+                        # cmdExtract = r'%s d -f %s %s'% (command, str2, str1)
+                        getFeatures.main(thefile, apkname)
+                        print ("******************well done******************")
+                except (IOError, err):
+                        print(err)
+                        sys.exit()
 
-# 启动模拟器
-def start_emulator(emulator_name = "MyEmulator"):
-    cmd = f"emulator -avd {emulator_name}"
-    subprocess.run(cmd, shell=True)
-
-print(1)
-create_emulator()
-print(2)
-start_emulator()
-print(3)
+if __name__ == "__main__":
+    dir=Packages(rootdir, 'e:/')
+    dir.check()
