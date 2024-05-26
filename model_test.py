@@ -7,20 +7,16 @@ from sklearn import svm, tree, linear_model, neighbors, naive_bayes, ensemble, d
 # 加载数据集
 data = pd.read_csv('..\\dataset\\new_merged.csv',encoding = 'gbk')
 
-# 假设最后一列是目标变量
-X = data.iloc[:, :4]
+
+data = data.drop(data.columns[[0,1, 2, 3, 5]], axis=1)
+
+
+X = data.iloc[:, 1:]
 
 from sklearn.preprocessing import LabelEncoder
 
-# 对所有的分类变量进行标签编码
-for col in X.columns:
-    if X[col].dtype == 'object':
-        lbl = LabelEncoder()
-        lbl.fit(list(X[col].values))
-        X[col] = lbl.transform(list(X[col].values))
-
 X = X.fillna(X.mean())
-y = data.iloc[:, 4]
+y = data.iloc[:, 0]
 
 # 划分训练集和测试集
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -283,3 +279,5 @@ for name, mp in models_and_params.items():
     grid.fit(X_train, y_train)
     end_time = time.time()
     print(f"Model: {name}, Best parameters: {grid.best_params_}, Best score: {grid.best_score_}, Training time: {end_time - start_time}s")
+
+
