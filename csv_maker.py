@@ -1,45 +1,47 @@
 import csv
 import os
 import datetime
-from util import APK
+from util import my_APK
 
-# 获取当前时间并生成文件名
+# Get current time and generate file names
 current_time = datetime.datetime.now()
 file_name = current_time.strftime("%Y-%m-%d_%H-%M-%S") + ".csv"
 error_file_name = current_time.strftime("%Y-%m-%d_%H-%M-%S") + "_errors.csv"
 
-# 检查是否有非空字符串
-def check_non_empty(*args):
-    for string in args:
-        if string:
-            return True
-    return False
-
-# 初始化CSV文件并写入表头
-with open(file_name, "w", newline='', encoding='gbk', errors='ignore') as csvfile:
+# Open CSV files
+with open(file_name, "w", newline='', encoding='gbk', errors='ignore') as csvfile, \
+     open(error_file_name, "w", newline='', encoding='gbk', errors='ignore') as errorfile:
     writer = csv.writer(csvfile)
-    writer.writerow(["name", "permissions", "get_package", "version_name", "signature", "type"])
+    error_writer = csv.writer(errorfile)
+    writer.writerow(["name", "permissions", "packagename", "version", "signature", "activity", "main_activities",
+                     "service", "receivers", "providers", "manifest", "instruction", "classes", "method", "field"])
 
-apk_folder = "../dataset/test"
-
-# 遍历所有APK文件并处理
-for dirname in os.listdir(apk_folder):
-    path_dir = os.path.join(apk_folder, dirname)
-    for apk_name in os.listdir(path_dir):
-        apk_path = os.path.join(path_dir, apk_name)
-        try:
-            apk = APK(apk_path)
-            name = apk.get_app_name()
-            permissions = apk.get_permissions()
-            packagename = apk.get_package()
-            version = apk.get_androidversion_code()
-            signature = apk.get_signature_names()
-
-            if check_non_empty(name, permissions, packagename, version, signature):
-                with open(file_name, "a", newline='', encoding='gbk', errors='ignore') as csvfile:
-                    writer = csv.writer(csvfile)
-                    writer.writerow([name, permissions, packagename, version, signature, dirname])
-        except Exception as e:
-            with open(error_file_name, "a", newline='', encoding='gbk', errors='ignore') as errorfile:
-                error_writer = csv.writer(errorfile)
-                error_writer.writerow([apk_path, str(e)])
+    # Process APK files
+    apk_folder = "../dataset/test1"
+    for dirname in os.listdir(apk_folder):
+        path_dir = os.path.join(apk_folder, dirname)
+        for apk_name in os.listdir(path_dir):
+            apk_path = os.path.join(path_dir, apk_name)
+            try:
+                apk_instance = my_APK(apk_path)
+                data = [
+                    apk_instance.get_app_name(),
+                    apk_instance.get_permissions(),
+                    apk_instance.get_package(),
+                    apk_instance.get_androidversion_name(),
+                    apk_instance.get_signature_names(),
+                    apk_instance.get_activities(),
+                    apk_instance.get_main_activity(),
+                    apk_instance.get_services(),
+                    apk_instance.get_receivers(),
+                    apk_instance.get_providers(),
+                    apk_instance.get_android_manifest_axml(),
+                    apk_instance.get_instructions(),
+                    apk_instance.get_classes(),
+                    apk_instance.get_methods(),
+                    apk_instance.get_fields()
+                ]
+                if any(data):
+                    writer.writerow(data)
+            except Exception as e:
+                error_writer.writerow([apk_path, repr(e)])
