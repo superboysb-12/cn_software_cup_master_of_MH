@@ -1,4 +1,4 @@
-from strengthen_same_class_data import strengthen_data
+from process_data import strengthen_data
 import os
 import pandas as pd
 
