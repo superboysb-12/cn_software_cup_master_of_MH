@@ -17,6 +17,7 @@ def word_2_vec(text,if_cut_all):
     if word_vectors:
         sum_vector = sum(word_vectors)
         average_vector = sum_vector / len(word_vectors)
+        print("已经完成一次转化！")
         return average_vector
     else:
         return None
