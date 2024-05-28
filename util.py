@@ -6,7 +6,6 @@ from androguard.core.bytecodes.apk import APK
 from androguard.core.bytecodes.dvm import DalvikVMFormat
 from androguard.core.analysis import analysis
 
-
 def get_qrcode(image_path):
     img = cv2.imread(image_path)
     decoded_objects = decode(img)
@@ -68,7 +67,6 @@ class my_APK:
         return self.a.get_providers()
 
     def get_instructions(self):
-
         all_instructions_concatenated = ""
         for method in self.d.get_methods():
             instructions = method.get_instructions()
@@ -76,16 +74,24 @@ class my_APK:
                 for instruction in instructions:
                     all_instructions_concatenated += str(instruction) + " "
 
+        all_instructions_concatenated = re.sub(r'[^a-zA-Z\s]', ' ', all_instructions_concatenated)
+
         return all_instructions_concatenated
 
     def get_classes(self):
         classes_analysis = self.dx.get_classes()
         class_names = [class_analysis.get_vm_class().get_name() for class_analysis in classes_analysis]
+
+        class_names = [re.sub(r'[^a-zA-Z]', ' ', name) for name in class_names]
+
         return class_names
 
     def get_methods(self):
         methods_generator = self.dx.get_methods()
         method_names = [method.get_method().get_name() for method in methods_generator]
+
+        method_names = [re.sub(r'[^a-zA-Z]', ' ', name) for name in method_names]
+
         return method_names
 
     def get_strings(self):
