@@ -1,4 +1,4 @@
-from func_attribute_mixup import strengthen_data
+from func_attribute_mixup import attribute_mixup
 import os
 import pandas as pd
 
@@ -33,7 +33,7 @@ for file_name in os.listdir(folder_path):
         file_path = os.path.join(folder_path, file_name)
         # 读取 CSV 文件并将其添加到列表中
         df = pd.read_csv(file_path, encoding="gbk")
-        new_data = strengthen_data(data=df,
+        new_data = attribute_mixup(data=df,
                                    target_name=file_name + "(augmented)",
                                    target_path="D:\学习资料\反炸APP分析\\augmented_data",
                                    target_num=325,

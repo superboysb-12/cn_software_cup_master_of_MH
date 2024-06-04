@@ -1,28 +1,25 @@
 import random
-
 from transformers import BertTokenizer, BertForMaskedLM
 import logging
 import warnings
 import string
 
-# 创建不希望被掩码的标点符号和字母列表
+# 创建不希望被掩码的字符列表
 exclude_tokens =  list(string.punctuation) + ['[CLS]', '[SEP]'] #+list(string.ascii_letters)
-
-#print(exclude_tokens)
-
-
 
 # 忽略日志与警告
 logging.getLogger('transformers').setLevel(logging.ERROR)
 warnings.filterwarnings('ignore')
 
-
 # 加载预训练的 BERT 模型和对应的 tokenizer
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertForMaskedLM.from_pretrained('bert-base-uncased')
 
-#text = 'you should have act, the elder scroll told of their return'
-def augment_text(text :str,mask_prob : float = 0.15,top_k : int = 5):
+
+def augment_mlm(text :str,
+                 mask_prob : float = 0.15,#每个字符被遮掩的概率
+                 top_k : int = 5
+                 ):# -> str
 
     tokens = text.split()
     l = len(tokens)
@@ -53,12 +50,11 @@ def augment_text(text :str,mask_prob : float = 0.15,top_k : int = 5):
         # 使用 tokenizer 将索引转换为对应的词汇
         predicted_tokens = [tokenizer.decode([index]) for index in top_indices]
 
-        #print("预测的词汇：", predicted_tokens)
-
         tokens[index] = predicted_tokens[random.randint(0,top_k-1 )]
     tokens = [word for word in tokens if word != ' ']
     return ' '.join(tokens)
 
+#text = 'you should have act, the elder scroll told of their return'
 #print('original: ',text)
 #print('augmented: ',augment_text(text,mask_prob=0.2))
 
