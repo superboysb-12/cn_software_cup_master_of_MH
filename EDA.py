@@ -38,7 +38,7 @@ class EDA:
         new_words = sentence.split(' ')
         return new_words
 
-    def random_deletion(self,words, p):
+    def random_deletion(self,words, p = 0.01):
 
         #obviously, if there's only one word, don't delete it
         if len(words) == 1:
