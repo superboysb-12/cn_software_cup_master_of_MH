@@ -121,6 +121,8 @@ def side_bar():
         def download():
             if 'link' not in st.session_state:
                 st.session_state['link'] = ''
+            if 'QR_code' not in st.session_state:
+                st.session_state['QR_code'] = None
             if 'web' not in st.session_state:
                 st.session_state['web'] = ''
 
@@ -141,9 +143,19 @@ def side_bar():
                         #1,2,3对应3个下载方式
                         #返回下载情况,true和false
             elif download_methods == '二维码下载':
-                with st.spinner('下载中...'):
-                    time.sleep(2)
-                    #download_apk(2,image)
+                uploaded_image = st.file_uploader(
+                    label="请上传二维码",
+                    type=['jpg','png'],
+                    help="限jpg,png格式"
+                )
+                if uploaded_image is not None:
+                    QR_code = uploaded_image.getbuffer()
+                    if st.session_state['QR_code'] != QR_code:
+                        st.session_state['QR_code'] = QR_code
+                        with st.spinner('下载中...'):
+                            time.sleep(2)
+                            #download_apk(2,QR_code)
+
             else:
                 web = st.text_input('请输入网址')
                 if st.session_state['web'] != web:
