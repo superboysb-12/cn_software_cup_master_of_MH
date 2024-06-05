@@ -7,11 +7,14 @@ from androguard.core.bytecodes.apk import APK
 
 
 
-def get_app_information(apk_path : str,target_path : str):#csv和png均保存在target_path
+def get_app_information(apk_path,target_path : str):#csv和png均保存在target_path
     tool = my_APK(apk_path)
     too = APK(apk_path)
 
-    file_name = apk_path.split('\\')[-1]
+    if type(apk_path) == str:
+        file_name = apk_path.split('\\')[-1]
+    else:
+        file_name = too.get_app_name()
 
     file_size_bytes = os.path.getsize(apk_path)
     file_size = round(file_size_bytes/1024/1024,1)
@@ -81,4 +84,4 @@ def get_app_information(apk_path : str,target_path : str):#csv和png均保存在
     df = df[columns]#按columns排序
     df.to_csv(target_path+"\\"+''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ' ])+".csv",encoding='gbk',index=False)
 
-#get_app_information(r"D:\学习资料\反炸APP分析\apk\data\体测圈.apk.1",r"D:\学习资料\反炸APP分析\apk\data")
+get_app_information(r"D:\学习资料\反炸APP分析\apk\data\体测圈.apk.1",r"D:\学习资料\反炸APP分析\apk\data")
