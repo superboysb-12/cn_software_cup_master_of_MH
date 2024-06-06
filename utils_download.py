@@ -16,8 +16,7 @@ def generate_header():
     current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     header = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 6.1 WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.93 Safari/537.36',
-        'Date': current_time,  # 可选项，如果你需要在 header 中包含当前时间
-        # 其他自定义 header 字段
+        'Date': current_time,
     }
     return header
 
@@ -38,7 +37,7 @@ def download_single_apk(apk_url):
     if not os.path.exists(save_path):  # 避免二次下载
         print("Downloading  %s" % (save_path))
         try:
-            r = requests.get(apk_url, headers=generate_header(), allow_redirects=True, timeout=720)  # 发起requests下载请求
+            r = requests.get(apk_url, headers=generate_header(), allow_redirects=True, timeout=180000)  # 发起requests下载请求
             status_code = r.status_code
             if (status_code == 200 or status_code == 206):
                 with open(save_path, "wb") as hf:
