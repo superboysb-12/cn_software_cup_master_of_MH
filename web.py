@@ -9,6 +9,9 @@ st.title('ADS')
 def reset_session_state():
     st.session_state['analysis_complete'] = False
     st.session_state['recognition_complete'] = False
+    st.session_state['static_completed'] = False
+    st.session_state['dynamic_completed'] = False
+    st.session_state['report_completed'] = False
     st.session_state['df1'] = pd.DataFrame()
     st.session_state['df2'] = pd.DataFrame()
     st.session_state['df3'] = pd.DataFrame()
@@ -16,6 +19,7 @@ def reset_session_state():
     st.session_state['df5'] = pd.DataFrame()
     st.session_state['image'] = None
     st.session_state["prediction_type"] = None
+
 def static_analyzer(uploaded_file):
     # 初始化 session_state
     if 'analysis_complete' not in st.session_state:
@@ -91,6 +95,7 @@ def static_analyzer(uploaded_file):
                 st.error('识别失败')
                 st.exception(e)
     if st.session_state['recognition_complete'] == True:
+        st.session_state['static_completed'] = True
         if st.session_state["prediction_type"] == '正常':
             st.success('识别结果为: 正常 APP')
         st.warning(f'识别结果为: {st.session_state["prediction_type"]} 类APP')
@@ -98,8 +103,16 @@ def static_analyzer(uploaded_file):
 def dynamic_analyzer():
     st.header('动态分析模式')
     st.write('在这里展示动态分析的信息。')
+    #st.session_state['dynamic_completed'] = True
 
 def side_bar():
+    if 'static_completed' not in st.session_state:
+        st.session_state['static_completed'] = False
+    if 'dynamic_completed' not in st.session_state:
+        st.session_state['dynamic_completed'] = False
+    if 'report_completed' not in st.session_state:
+        st.session_state['report_completed'] = False
+
     #侧栏选择分析方式
     with st.sidebar:
         option = st.selectbox(
@@ -130,7 +143,7 @@ def side_bar():
                 label='下载APK',
                 options=('链接下载', '二维码下载', '网页下载'),
                 format_func=str,
-                help='非必须,下载的APK在/data文件夹中'
+                help='非必须,下载的APK在/apks中'
             )
             if download_methods == '链接下载':
                 link = st.text_input('请输入连接')
@@ -163,11 +176,31 @@ def side_bar():
                     with st.spinner('下载中...'):
                         time.sleep(2)
                         #download_apk(3,web)
-
         download()
+        def generate_visual_report():
+            static_result = st.checkbox('静态分析结果',value = True)
+            dynamic_result = st.checkbox('动态分析结果',value = True)
+            if st.button('生成结果报告',help = '请勾选报告内容,报告保存在/report中'):
+                if not (static_result or dynamic_result):
+                    st.info('请勾选至少一项')
+                elif not ((static_result == True and st.session_state['static_completed'] == False) or (dynamic_result == True and st.session_state['dynamic_completed'] == False)):
+                    with st.spinner('正在生成'):
+                        #generate_report(static_result,dynamic_result)
+                        #传入可视化包含的结果,生成对应的报告
+                        time.sleep(2)
+                        st.session_state['report_completed'] = True
+                else:
+                    st.info('勾选的内容尚未分析完成')
+            if st.session_state['report_completed']:
+                st.success('报告已生成')
+        generate_visual_report()
+
     if option == '静态分析':
         static_analyzer(uploaded_file)
     elif option == '动态分析':
         dynamic_analyzer()
 
 side_bar()
+
+#目前问题:
+#1.重新勾选报告内容时,生成状态不会刷新 解决方法:将勾选状态缓存到session_stats中
