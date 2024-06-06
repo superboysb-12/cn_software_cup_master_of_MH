@@ -7,7 +7,7 @@ from androguard.core.bytecodes.apk import APK
 
 
 
-def get_app_information(apk_path,target_path : str):#csv和png均保存在target_path
+def get_app_information(apk_path,target_path : str  = 'None'):# ->information or information_path #csv和png均保存在target_path
     tool = my_APK(apk_path)
     too = APK(apk_path)
 
@@ -82,6 +82,8 @@ def get_app_information(apk_path,target_path : str):#csv和png均保存在target
 
     df = pd.DataFrame(data)
     df = df[columns]#按columns排序
+    if target_path == 'None':
+        return df
     df.to_csv(target_path+"\\"+''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ' ])+".csv",encoding='gbk',index=False)
-
-get_app_information(r"D:\学习资料\反炸APP分析\apk\data\体测圈.apk.1",r"D:\学习资料\反炸APP分析\apk\data")
+    return target_path+"\\"+''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ' ])+".csv"
+#get_app_information(r"D:\学习资料\反炸APP分析\apk\data\体测圈.apk.1",r"D:\学习资料\反炸APP分析\apk\data")
