@@ -1,13 +1,22 @@
-
 from EDA import EDA
 import pandas as pd
 import random
 
-data = pd.read_csv("D:\学习资料\反炸APP分析\Data\output.csv",encoding="gbk")
+DATA_PATH = "D:\学习资料\反炸APP分析\Data\output.csv"
+TARGET_PATH = "D:\学习资料\反炸APP分析\Data"
+TARGET_NAME = "augmented_data_EDA"
+AUGMENT_NUM = 600 #新增多少数据
 
+#读入数据
+data = pd.read_csv(DATA_PATH,encoding="gbk")
 r = len(data)
 columns = data.columns
 
+#存放新数据的变量
+new = pd.DataFrame(columns =columns)
+new_rows = []
+
+#对文本使用EDA的四种方法
 def augmentation_EDA(text : str,replace_prob : float = 0.3): # -> str
     eda = EDA()
     words = text.split()
@@ -18,17 +27,14 @@ def augmentation_EDA(text : str,replace_prob : float = 0.3): # -> str
     new_words = eda.random_insertion(new_words,int(n*0.001))
     return ' '.join(new_words)
 
-new = pd.DataFrame(columns =columns)
-new_rows = []
-augement_num = 600
-for _ in range(augement_num):
+#600次随机对某一条数据增强,并添加到新数据变量
+for _ in range(AUGMENT_NUM):
     index = random.randint(1,r-1)
     label,text = data[columns[0]][index],data[columns[1]][index]
     augmented_text = augmentation_EDA(text)
     new_row = pd.DataFrame([[label,augmented_text]], columns=columns)
     new_rows.append(new_row)
 
+#合并并保存
 new = pd.concat([new] + new_rows, ignore_index=True)
-
-target_path = "D:\学习资料\反炸APP分析\Data"
-new.to_csv(target_path+'\\'+"augmented_data_EDA"+'.csv', index=False,encoding='gbk')
+new.to_csv(TARGET_PATH+'\\'+TARGET_NAME+'.csv', index=False,encoding='gbk')
