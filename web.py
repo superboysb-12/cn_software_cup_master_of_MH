@@ -2,6 +2,7 @@ import streamlit as st
 import time
 import pandas as pd
 from PIL import Image
+from func_get_app_information import get_app_information as static_analyzer_apk
 
 st.title('ADS')
 
@@ -36,8 +37,11 @@ def static_analyzer(uploaded_file):
                 original_apk = uploaded_file.getbuffer()
                 with st.spinner('解析中...'):
                     time.sleep(2)
-                    # st.session_state['df1'],st.session_state['df2'],st.session_state['df3'],st.session_state['df4'],st.session_state['df5'],st.session_state['image'] = static_analyzer_apk(original_apk)
+                    st.session_state['df1'],st.session_state['df2'],st.session_state['df3'],st.session_state['df4'],st.session_state['df5'],st.session_state['image'] = static_analyzer_apk(original_apk)
+                    st.session_state['image']=st.session_state['image'][0]
                     #在这里对APK进行解析得到各种特征得到多个df(基本信息,应用权限,相关url,类,activity)和image
+
+
                 st.session_state['analysis_complete'] = True
             except Exception as e:
                 st.session_state['analysis_complete'] = False
@@ -46,12 +50,6 @@ def static_analyzer(uploaded_file):
             st.success('解析完成')
 
     if st.session_state['analysis_complete'] == True:
-        st.session_state['df1'] = pd.DataFrame({"Name": ['QQ'], "大小": ['288.7mb']})
-        st.session_state['df2'] = pd.DataFrame({"权限1": [0], "权限2": [1]})
-        st.session_state['df3'] = pd.DataFrame({"URL1": ['baidu.com'], "URL2": ['bing.com']})
-        st.session_state['df4'] = pd.DataFrame({"Class1": ['get_class1'], "Class2": ['get_class2']})
-        st.session_state['df5'] = pd.DataFrame({"Activity1": ['yes'], "Activity2": ['sir']})
-        st.session_state['image'] = Image.open('test.jpg')
         def data_visualization(df1,df2,df3,df4,df5,image):
             st.image(image,
                      caption='APP图像',
