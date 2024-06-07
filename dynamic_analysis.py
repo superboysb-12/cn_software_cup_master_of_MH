@@ -1,7 +1,10 @@
 from adb_shell.auth.sign_pythonrsa import PythonRSASigner
 from adb_shell.adb_device import AdbDeviceTcp
+import subprocess
+import time
 
-
+apk_path = "D:/ADS/dataset/test1/test01/QQ.apk"
+package_name = 'com.tencent.mobileqq'
 def start_dynamic_analysis():
     # 指定公钥和私钥的路径
     adbkey_path = 'D:/AndoridAVD/.android/adbkey'
@@ -15,17 +18,6 @@ def start_dynamic_analysis():
 
     # 返回signer以供后续使用
     return signer
-
-
-import subprocess
-
-
-def start_emulator(emulator_name):
-    # 启动模拟器的命令
-    start_cmd = ['emulator', '-avd', emulator_name]
-
-    # 在后台启动模拟器
-    subprocess.Popen(start_cmd)
 
 def link_to_device(signer):
 
@@ -57,30 +49,52 @@ def install_APK(apk_path):
     else:
         print("没有找到设备")
 
+def get_uid(device, package_name):
+    # 使用adb命令获取应用的UID
+    uid_cmd = f"dumpsys package {package_name} | grep userId"
+    result = device.shell(uid_cmd)
+    uid = result.split('=')[1].split()[0]
+    print('uid:',uid)
+    return uid
+
+def catch_APK(device, package_name):
+    # 获取应用的UID
+    uid = get_uid(device, package_name)
+    # 开始抓包
+    device.shell(f"tcpdump -i any -w /sdcard/capture.pcap")
+    print('capturing')
 def start_APK(device):
     # 启动APK
     package_name = 'com.tencent.mobileqq'
     main_activity = 'com.tencent.mobileqq.activity.SplashActivity'
     device.shell(f'am start -n {package_name}/{main_activity}')
-
 def run_APK(device):
     # 模拟点击和发送按键事件
-    device.shell('input tap x y')  # 替换为实际的坐标值
+    device.shell('input tap 100 200')  # 替换为实际的坐标值
     device.shell('input keyevent KEYCODE_MENU')
 
+def stop_tcpdump(device):
+    # 使用adb命令获取tcpdump的PID
+    pid_cmd = "ps | grep tcpdump | awk '{print $2}'"
+    pid = device.shell(pid_cmd)
+    print('pid:',pid)
+    # 使用kill命令停止tcpdump
+    kill_cmd = f"kill {pid}"
+    device.shell(kill_cmd)
+    print('tcpdump stopped')
 
-def catch_APK(device):
-    # 开始抓包
-    device.shell('tcpdump -i any -w /sdcard/capture.pcap')  # 确保设备已root并安装了tcpdump
+def pull_capture():
+    pull_cmd = 'adb pull /sdcard/capture.pcap D:/ADS/cn_software_cup_master_of_MH/temp'
+    subprocess.run(pull_cmd)
 
-
-# 使用示例
 signer = start_dynamic_analysis()
-start_emulator('Emulator')
 device = link_to_device(signer)
-apk_path = "D:/ADS/dataset/test1/test01/QQ.apk"
 #install_APK(apk_path)
-start_APK(device)
-run_APK(device)
-catch_APK(device)
+catch_APK(device,package_name)
+#start_APK(device)
+#run_APK(device)
+time.sleep(60)
+stop_tcpdump(device)
 
+#adb shell dumpsys package com.tencent.mobileqq |adb shell grep userId
+#adb shell tcpdump -i any -w /sdcard/capture.pcap 'uid 10050'
