@@ -1,5 +1,10 @@
 from androguard.core.bytecodes.apk import APK
 import zipfile
+from io import BytesIO
+
+CONST_SAVE_PATH = r"temp\icon"
+
+
 
 def extract_icon_from_apk(apk_path, icon_path):
     with zipfile.ZipFile(apk_path, 'r') as zip_ref:
@@ -13,20 +18,31 @@ def extract_icon_from_apk(apk_path, icon_path):
         else:
             print("Icon path not found in APK.")
 
-def get_icon(apk_path :str , target_path :str,target_name : str):
+def get_icon(apk_data = None,apk_path : str = 'None' ,
+             target_path :str = CONST_SAVE_PATH,
+             target_name : str = 'None',
+             image : bool = True):
+
+    if apk_path == 'None':#如果传入apk数据而非地址
+        if apk_data is None:
+            return
+        apk_path = BytesIO(apk_data)
     # 调用函数提取图标数据
     a = APK(apk_path, testzip=True)
     icon_path = a.get_app_icon()
-    print(icon_path)
     icon_data = extract_icon_from_apk(apk_path, icon_path)
 
+    if image:
+        return icon_data
     # 将图标数据写入文件
     if icon_data:
         with open(target_path+'\\'+target_name+".png", "wb") as f:
             f.write(icon_data)
-        print("Icon extracted and saved as app_icon.png.")
+        #print("Icon extracted and saved as app_icon.png.")
     else:
         print("Failed to extract icon.")
+
+    return target_path+'\\'+target_name+".png"
 
 
 '''

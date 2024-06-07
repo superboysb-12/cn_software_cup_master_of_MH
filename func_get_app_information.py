@@ -5,16 +5,36 @@ import pandas as pd
 import os
 from androguard.core.bytecodes.apk import APK
 
+CONST_SAVE_PATH = r"temp\apk"
 
 
-def get_app_information(apk_path,target_path : str  = 'None'):# ->information or information_path #csv和png均保存在target_path
+
+def save_apk(apk_data): # -> str save_path
+    current_time = datetime.now()
+    time = current_time.strftime("%Y-%m-%d %H:%M:%S")
+    save_path = CONST_SAVE_PATH +'\\'+''.join([c for c in time if c != ':' and c != '-' and c != ' ' ])+r".apk"
+    with open(save_path, "wb") as f:
+        f.write(apk_data)
+
+    return save_path
+
+
+
+
+def get_app_information(apk_data = None, apk_path : str = 'None' , target_path : str = 'None'):# -> information_path #csv和png均保存在target_path
+    if apk_path == 'None':
+        if apk_data is None:
+            print('Invalid input')
+            return
+        apk_path = save_apk(apk_data)
+
+
+
     tool = my_APK(apk_path)
     too = APK(apk_path)
 
-    if type(apk_path) == str:
-        file_name = apk_path.split('\\')[-1]
-    else:
-        file_name = too.get_app_name()
+    file_name = apk_path.split('\\')[-1]
+
 
     file_size_bytes = os.path.getsize(apk_path)
     file_size = round(file_size_bytes/1024/1024,1)
@@ -50,16 +70,21 @@ def get_app_information(apk_path,target_path : str  = 'None'):# ->information or
     andro_permissions=too.get_details_permissions()
     permissions = tool.get_permissions()
 
-    get_icon(apk_path,target_path,name)
-    icon_path = target_path+'\\'+name+'.png'
+    url = 'None'#tool.get_url()
+    classes = tool.get_classes()
 
-    columns = ['file_name', 'file_size', 'name', 'package_name', 'md5', 'label', 'signature_name', 'main_activity',
-               'scan_time', 'version_name', 'version_code', 'min_sdk', 'max_sdk', 'activities', 'services',
-                'receivers', 'providers', 'permissions','andro_permissions','icon_path']
+    icon = get_icon(apk_path = apk_path,target_path=target_path,target_name=name,image=False) if target_path != 'None' \
+        else get_icon(apk_path = apk_path,target_path=CONST_SAVE_PATH,target_name=name,image=False)
+
+    columns = ['file_name', 'name', 'file_size', 'package_name', 'md5',
+               'label', 'signature_name', 'scan_time',
+               'version_name', 'version_code', 'min_sdk', 'max_sdk',
+               'services','receivers', 'providers', 'permissions',
+               'andro_permissions','icon','url','classes','main_activity','activities']
 
     data = {
         'file_name': [file_name],
-        'file_size': [file_size],
+        'file_size': [str(file_size)+'MB'],
         'name': [name],
         'package_name': [package_name],
         'md5': [md5],
@@ -77,13 +102,19 @@ def get_app_information(apk_path,target_path : str  = 'None'):# ->information or
         'providers': [providers],
         'permissions': [permissions],
         'andro_permissions': [andro_permissions],
-        'icon_path':[icon_path]
+        'icon':[icon],
+        'url':[url],
+        'classes':[classes]
     }
 
     df = pd.DataFrame(data)
     df = df[columns]#按columns排序
+    basic = df.loc[:, 'name': 'providers']
+
+    #在这里对APK进行解析得到各种特征得到多个df(基本信息, 应用权限, 相关url, 类, activity)和image
     if target_path == 'None':
-        return df
+        return basic,df['permissions'],df['url'],df['classes'],df.loc[:, ['main_activity','activities']],df['icon']
     df.to_csv(target_path+"\\"+''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ' ])+".csv",encoding='gbk',index=False)
+
     return target_path+"\\"+''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ' ])+".csv"
 #get_app_information(r"D:\学习资料\反炸APP分析\apk\data\体测圈.apk.1",r"D:\学习资料\反炸APP分析\apk\data")
