@@ -6,6 +6,7 @@ import requests
 import datetime
 from bs4 import BeautifulSoup
 from selenium import webdriver
+import numpy as np
 
 curdir = os.getcwd()  # 获取当前路径current work directory
 
@@ -20,8 +21,8 @@ def check_for_apk(directory=data_dir):
     for root, dirs, files in os.walk(directory):
         for file in files:
             if file.endswith('.apk'):
-                return True
-    return False
+                return 1
+    return -1
 
 
 def get_redirected_url(url, page_url):
@@ -86,12 +87,14 @@ def is_apk_url(url):
     return url.endswith('.apk')
 
 
-def get_qrcode(image_path):
-    img = cv2.imread(image_path)
+def get_qrcode_from_binary(image_binary):
+    nparr = np.frombuffer(image_binary, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     decoded_objects = decode(img)
     for obj in decoded_objects:
         if obj.type == 'QRCODE':
             return obj.data.decode('utf-8')
+    return None
 
 
 def generate_header():
@@ -120,7 +123,7 @@ def download_single_apk(apk_url):
         return -1
 
 
-def download_apk(method_code, url = None, qrcode = None):
+def download_apk(method_code=1, url = None, qrcode = None):
     if method_code == 1:
         download_single_apk(url)
     elif method_code == 2:
@@ -139,6 +142,7 @@ def download_apk(method_code, url = None, qrcode = None):
             download_single_apk(apk_url)
     else:
         pass
+    print(check_for_apk())
     return check_for_apk()
 
 ###批量下载的线程
