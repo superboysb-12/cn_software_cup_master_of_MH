@@ -1,4 +1,54 @@
-from adb_shell.auth.sign_pythonrsa import PythonRSASigner
+import struct,socket
+import ctypes as ct
+import libpcap as pcap
+
+
+errbuf = ct.create_string_buffer(pcap.PCAP_ERRBUF_SIZE + 1)
+#指定抓包设备
+alldevs = ct.POINTER(pcap.pcap_if_t)()
+pcap.findalldevs(ct.byref(alldevs), errbuf)
+for dev in alldevs:
+    print(dev.name)
+    device = dev.name
+    break  # 使用第一个
+pcap.freealldevs(alldevs)
+
+handle = pcap.open_live(device, 4096, 1, 1000, errbuf)
+if errbuf.value:
+    print("hanle error :", errbuf.value)
+fname = b"realtime1.cap"
+fPcap = pcap.dump_open(handle, fname)
+fPcapUbyte = ct.cast(fPcap, ct.POINTER(ct.c_ubyte))
+
+pheader = pcap.pkthdr()
+i = 0
+print("live cap begin")
+while True:
+    packet = pcap.next(handle, pheader)
+    if not packet: continue
+    print(i, pheader.ts.tv_sec, pheader.len, pheader.caplen)
+    p = ct.pointer(packet.contents)
+    ipInfo = struct.unpack('<BBHHHBBH4s4s', bytes(p[14:34]))
+    srcIp = socket.inet_ntoa(ipInfo[-2])
+    dstIp = socket.inet_ntoa(ipInfo[-1])
+    print(srcIp, "=>", dstIp)
+    pcap.dump(fPcapUbyte, pheader, packet)
+
+    i = i + 1
+    if i > 10:
+        break
+print("i = ", i)
+print("live cap end")
+pcap.close(handle)  # need close
+pcap.dump_flush(fPcap)
+pcap.dump_close(fPcap)
+
+
+
+#device = b'\\Device\\NPF_{434AE621-ABE6-4168-93D3-D16986E0FD0C}'  # Windows
+
+
+'''from adb_shell.auth.sign_pythonrsa import PythonRSASigner
 from adb_shell.adb_device import AdbDeviceTcp
 import subprocess
 import time
@@ -98,3 +148,4 @@ stop_tcpdump(device)
 
 #adb shell dumpsys package com.tencent.mobileqq |adb shell grep userId
 #adb shell tcpdump -i any -w /sdcard/capture.pcap 'uid 10050'
+'''
