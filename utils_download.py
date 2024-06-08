@@ -87,7 +87,7 @@ def is_apk_url(url):
     return url.endswith('.apk')
 
 
-def get_qrcode_from_binary(image_binary):
+def get_qrcode(image_binary):
     nparr = np.frombuffer(image_binary, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     decoded_objects = decode(img)
@@ -107,19 +107,28 @@ def generate_header():
 
 
 def download_single_apk(apk_url):
-    # print(apk_url)
-    save_path = os.path.join(curdir, "data", "%s" % os.path.basename(apk_url))
+    save_path = os.path.join(os.getcwd(), "data", os.path.basename(apk_url))
     try:
-        r = requests.get(apk_url, headers=generate_header(), allow_redirects=True, timeout=180)  # 发起requests下载请求
-        status_code = r.status_code
-        if (status_code == 200 or status_code == 206):
+        with requests.get(apk_url, headers=generate_header(), allow_redirects=True, timeout=180, stream=True) as r:
+            r.raise_for_status()
+            total_size = int(r.headers.get('content-length', 0))
+            chunk_size = 1024
+            downloaded_size = 0
+
             with open(save_path, "wb") as hf:
-                hf.write(r.content)
-        print("正在下载中！")
+                for chunk in r.iter_content(chunk_size=chunk_size):
+                    if chunk:
+                        hf.write(chunk)
+                        downloaded_size += len(chunk)
+                        progress = downloaded_size / total_size * 100
+                        print(f"\r正在下载中: {progress:.2f}%", end="")
+
+        print("\n下载完成！")
         return 0
 
-    except:
+    except Exception as e:
         print("发生错误,无法下载APK")
+        print(e)
         return -1
 
 
@@ -142,7 +151,6 @@ def download_apk(method_code=1, url = None, qrcode = None):
             download_single_apk(apk_url)
     else:
         pass
-    print(check_for_apk())
     return check_for_apk()
 
 ###批量下载的线程
