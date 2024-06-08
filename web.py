@@ -3,11 +3,11 @@ import time
 import pandas as pd
 from PIL import Image
 from func_get_app_information import get_app_information as static_analyzer_apk
-
+from utils_download import download_apk
 st.title('ADS')
 
 def highlight_dangerous(s):
-    return ['background-color: red' if v == 'dangerous' else '' for v in s]
+    return ['background-color: red' if 'dangerous' in v else '' for v in s]
 
 # 重置分析状态的函数
 def reset_session_state():
@@ -135,6 +135,7 @@ def side_bar():
         else:
             reset_session_state()
         def download():
+            download_stats = 1
             if 'link' not in st.session_state:
                 st.session_state['link'] = ''
             if 'QR_code' not in st.session_state:
@@ -149,12 +150,14 @@ def side_bar():
                 help='非必须,下载的APK在/apks中'
             )
             if download_methods == '链接下载':
-                link = st.text_input('请输入连接')
-                if st.session_state['link'] != link:
+                link = st.text_input('请输入链接')
+                if link == None:
+                    st.info('请输入链接')
+                elif st.session_state['link'] != link:
                     st.session_state['link'] = link
                     with st.spinner('下载中...'):
                         time.sleep(2)
-                        #download_status=download_apk(1,link)
+                        download_stats = download_apk(1, link)
                         #下载的文件保存在/data中
                         #1,2,3对应3个下载方式
                         #返回下载情况,true和false
@@ -169,16 +172,27 @@ def side_bar():
                     if st.session_state['QR_code'] != QR_code:
                         st.session_state['QR_code'] = QR_code
                         with st.spinner('下载中...'):
-                            time.sleep(2)
-                            #download_apk(2,QR_code)
+                            download_stats = download_apk(2,qrcode = QR_code)
+                else:
+                    st.info('请上传二维码')
 
             else:
                 web = st.text_input('请输入网址')
-                if st.session_state['web'] != web:
+                if web == None:
+                    st.info('请输入网址')
+                elif st.session_state['web'] != web:
                     st.session_state['web'] = web
                     with st.spinner('下载中...'):
                         time.sleep(2)
-                        #download_apk(3,web)
+                        download_stats = download_apk(3, web)
+            #print('stats:',download_stats)
+            if download_stats == 0:
+                st.success('下载成功')
+            elif download_stats == -1:
+                st.error('下载失败')
+            else:
+                pass
+
         download()
         def generate_visual_report():
             static_result = st.checkbox('静态分析结果',value = True)
@@ -206,4 +220,5 @@ def side_bar():
 side_bar()
 
 #目前问题:
-#1.重新勾选报告内容时,生成状态不会刷新 解决方法:将勾选状态缓存到session_stats中
+#1.二维码传不了路径
+#2.当链接不完整时无法判断为下载失败

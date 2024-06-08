@@ -120,7 +120,7 @@ def download_single_apk(apk_url):
         return -1
 
 
-def download_apk(method_code, url, qrcode):
+def download_apk(method_code, url = None, qrcode = None):
     if method_code == 1:
         download_single_apk(url)
     elif method_code == 2:
