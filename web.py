@@ -6,6 +6,9 @@ from func_get_app_information import get_app_information as static_analyzer_apk
 
 st.title('ADS')
 
+def highlight_dangerous(s):
+    return ['background-color: red' if v == 'dangerous' else '' for v in s]
+
 # 重置分析状态的函数
 def reset_session_state():
     st.session_state['analysis_complete'] = False
@@ -39,6 +42,7 @@ def static_analyzer(uploaded_file):
                     time.sleep(2)
                     st.session_state['df1'],st.session_state['df2'],st.session_state['df3'],st.session_state['df4'],st.session_state['df5'],st.session_state['image'] = static_analyzer_apk(original_apk)
                     st.session_state['image']=st.session_state['image'][0]
+
                     #在这里对APK进行解析得到各种特征得到多个df(基本信息,应用权限,相关url,类,activity)和image
 
 
@@ -56,13 +60,14 @@ def static_analyzer(uploaded_file):
                      width=100
                      )
             data_option = st.selectbox(
+                index=0,
                 label='解析结果',
                 options=['基本信息', '应用权限','相关URL','Class','Activity']
             )
             if data_option == '基本信息':
                 st.write(df1)
             elif data_option == '应用权限':
-                st.write(df2)
+                st.dataframe(st.session_state['df2'].style.apply(highlight_dangerous, subset=['Security']))
             elif data_option == '相关URL':
                 st.write(df3)
             elif data_option == 'Class':

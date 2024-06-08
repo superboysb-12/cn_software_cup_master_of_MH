@@ -8,6 +8,19 @@ from androguard.core.bytecodes.apk import APK
 CONST_SAVE_PATH = r"temp\apk"
 
 
+def get_permissions_report(permissions: dict):  # -> DataFrame
+    p = []
+
+    for key, value in permissions.items():
+        for i in range(len(value)):
+            value[i] = value[i].replace('\n', '')
+            value[i] = ' '.join(value[i].split())
+        p.append([key] + value)
+
+    df = pd.DataFrame(p, columns=['Name', 'Security', 'Function', 'Describe'])
+    return df
+
+
 
 def save_apk(apk_data): # -> str save_path
     current_time = datetime.now()
@@ -31,47 +44,32 @@ def get_app_information(apk_data = None, apk_path : str = 'None' , target_path :
 
 
     tool = my_APK(apk_path)
+    classes = tool.get_classes()
+    md5 = tool.get_md5()
+    url = 'None'#tool.get_url()
+
     too = APK(apk_path)
-
     file_name = apk_path.split('\\')[-1]
-
-
     file_size_bytes = os.path.getsize(apk_path)
     file_size = round(file_size_bytes/1024/1024,1)
-
-    name = tool.get_app_name()
-
-    signature_name = tool.get_signature_names()[0]
-
+    name = too.get_app_name()
+    signature_name = too.get_signature_names()
     #label = tool.get_score()
     label = "?"
-
-    md5 = tool.get_md5()[0]
-
-    package_name = tool.get_package()
-
+    package_name = too.get_package()
     current_time = datetime.now()
     scan_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
-
     version_name = too.get_androidversion_name()
     version_code = too.get_androidversion_code()
-
     min_sdk = too.get_min_sdk_version()
     max_sdk = too.get_max_sdk_version()
-
-    main_activity = tool.get_main_activity()
+    main_activity = too.get_main_activity()
     activities = too.get_activities()
-    services = tool.get_services()
-
-
+    services = too.get_services()
     receivers = too.get_receivers()
     providers=too.get_providers()
-
-    andro_permissions=too.get_details_permissions()
-    permissions = tool.get_permissions()
-
-    url = 'None'#tool.get_url()
-    classes = tool.get_classes()
+    details_permissions=get_permissions_report(too.get_details_permissions())
+    permissions = too.get_permissions()
 
     icon = get_icon(apk_path = apk_path,target_path=target_path,target_name=name,image=False) if target_path != 'None' \
         else get_icon(apk_path = apk_path,target_path=CONST_SAVE_PATH,target_name=name,image=False)
@@ -80,7 +78,7 @@ def get_app_information(apk_data = None, apk_path : str = 'None' , target_path :
                'label', 'signature_name', 'scan_time',
                'version_name', 'version_code', 'min_sdk', 'max_sdk',
                'services','receivers', 'providers', 'permissions',
-               'andro_permissions','icon','url','classes','main_activity','activities']
+               'icon','url','classes','main_activity','activities']
 
     data = {
         'file_name': [file_name],
@@ -101,7 +99,6 @@ def get_app_information(apk_data = None, apk_path : str = 'None' , target_path :
         'receivers': [receivers],
         'providers': [providers],
         'permissions': [permissions],
-        'andro_permissions': [andro_permissions],
         'icon':[icon],
         'url':[url],
         'classes':[classes]
@@ -110,10 +107,13 @@ def get_app_information(apk_data = None, apk_path : str = 'None' , target_path :
     df = pd.DataFrame(data)
     df = df[columns]#按columns排序
     basic = df.loc[:, 'name': 'providers']
+    df_transposed = basic.transpose()
+    df_transposed.columns = df_transposed.iloc[0]
+    df_transposed = df_transposed.drop(df_transposed.index[0])
 
     #在这里对APK进行解析得到各种特征得到多个df(基本信息, 应用权限, 相关url, 类, activity)和image
     if target_path == 'None':
-        return basic,df['permissions'],df['url'],df['classes'],df.loc[:, ['main_activity','activities']],df['icon']
+        return df_transposed,details_permissions,df['url'],df['classes'],df.loc[:, ['main_activity','activities']],df['icon']
     df.to_csv(target_path+"\\"+''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ' ])+".csv",encoding='gbk',index=False)
 
     return target_path+"\\"+''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ' ])+".csv"
