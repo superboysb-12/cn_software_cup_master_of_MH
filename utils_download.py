@@ -1,7 +1,7 @@
 import cv2
 from pyzbar.pyzbar import decode
 import os
-import threading
+# import threading
 import requests
 import datetime
 from bs4 import BeautifulSoup
@@ -93,7 +93,7 @@ def get_qrcode(image_binary):
     decoded_objects = decode(img)
     for obj in decoded_objects:
         if obj.type == 'QRCODE':
-            return obj.data.decode('utf-8')
+            return obj.data.decode('GBK')
     return None
 
 
@@ -134,16 +134,18 @@ def download_single_apk(apk_url):
 
 def download_apk(method_code=1, url = None, qrcode = None):
     if method_code == 1:
-        download_single_apk(url)
+        if is_apk_url(url):
+            download_single_apk(url)
+        else:
+            return -1
     elif method_code == 2:
         urls = get_qrcode(qrcode)
-        for url_a in urls:
-            if is_apk_url(url_a):
-                download_single_apk(url_a)
-            else:
-                urls_a = get_all_links(url_a)
-                for apk_url in urls_a:
-                    download_single_apk(apk_url)
+        if is_apk_url(urls):
+            download_single_apk(urls)
+        else:
+            urls_a = get_all_links(urls)
+            for apk_url in urls_a:
+                download_single_apk(apk_url)
     elif method_code == 3:
         urls_a = get_all_links(url)
 
