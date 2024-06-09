@@ -10,7 +10,7 @@ import numpy as np
 
 curdir = os.getcwd()  # 获取当前路径current work directory
 
-data_dir = os.path.join(curdir, "data")
+data_dir = os.path.join(curdir, r"temp\data")
 
 # 创建文件夹
 if not os.path.exists(data_dir):
@@ -107,7 +107,7 @@ def generate_header():
 
 
 def download_single_apk(apk_url):
-    save_path = os.path.join(os.getcwd(), "data", os.path.basename(apk_url))
+    save_path = os.path.join(os.getcwd(),data_dir, os.path.basename(apk_url))
     try:
         with requests.get(apk_url, headers=generate_header(), allow_redirects=True, timeout=180, stream=True) as r:
             r.raise_for_status()
