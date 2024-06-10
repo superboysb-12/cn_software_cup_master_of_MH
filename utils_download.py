@@ -12,6 +12,7 @@ curdir = os.getcwd()  # 获取当前路径current work directory
 
 data_dir = os.path.join(curdir, r"temp\data")
 
+
 # 创建文件夹
 if not os.path.exists(data_dir):
     os.makedirs(data_dir)
