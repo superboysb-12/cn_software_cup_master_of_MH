@@ -2,6 +2,8 @@ import hashlib
 import re
 from androguard.misc import AnalyzeAPK
 
+
+
 pm = ['android.permission.ACCEPT_HANDOVER', 'android.permission.ACCESS_ADSERVICES_AD_ID',
       'android.permission.ACCESS_ADSERVICES_ATTRIBUTION', 'android.permission.ACCESS_ALL_DOWNLOADS',
       'android.permission.ACCESS_ALL_EXTERNAL_STORAGE', 'android.permission.ACCESS_ASSISTED_GPS',

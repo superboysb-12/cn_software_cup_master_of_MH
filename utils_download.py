@@ -7,6 +7,7 @@ import datetime
 from bs4 import BeautifulSoup
 from selenium import webdriver
 import numpy as np
+import streamlit as st
 
 curdir = os.getcwd()  # 获取当前路径current work directory
 
@@ -107,8 +108,8 @@ def generate_header():
     return header
 
 
-def download_single_apk(apk_url):
-    save_path = os.path.join(os.getcwd(),data_dir, os.path.basename(apk_url))
+def download_single_apk(apk_url, progress_callback=None):
+    save_path = os.path.join(data_dir, os.path.basename(apk_url))
     try:
         with requests.get(apk_url, headers=generate_header(), allow_redirects=True, timeout=180, stream=True) as r:
             r.raise_for_status()
@@ -122,10 +123,18 @@ def download_single_apk(apk_url):
                         hf.write(chunk)
                         downloaded_size += len(chunk)
                         progress = downloaded_size / total_size * 100
+                        st.session_state['progress'] = progress/100
+                        if progress_callback:
+                            progress_callback()
                         print(f"\r正在下载中: {progress:.2f}%", end="")
 
         print("\n下载完成！")
         return 0
+    except Exception as e:
+        print("发生错误,无法下载APK")
+        print(e)
+        return -1
+
 
     except Exception as e:
         print("发生错误,无法下载APK")
@@ -133,56 +142,25 @@ def download_single_apk(apk_url):
         return -1
 
 
-def download_apk(method_code=1, url = None, qrcode = None):
+def download_apk(method_code=1, url = None, qrcode = None, progress_callback=None):
     if method_code == 1:
         if is_apk_url(url):
-            download_single_apk(url)
+            download_single_apk(url, progress_callback)
         else:
             return -1
     elif method_code == 2:
         urls = get_qrcode(qrcode)
         if is_apk_url(urls):
-            download_single_apk(urls)
+            download_single_apk(urls,progress_callback)
         else:
             urls_a = get_all_links(urls)
             for apk_url in urls_a:
-                download_single_apk(apk_url)
+                download_single_apk(apk_url,progress_callback)
     elif method_code == 3:
         urls_a = get_all_links(url)
 
         for apk_url in urls_a:
-            download_single_apk(apk_url)
+            download_single_apk(apk_url,progress_callback)
     else:
         pass
     return check_for_apk()
-
-###批量下载的线程
-# class DownLoadThread(threading.Thread):
-#     def __init__(self, q_job):
-#         self._q_job = q_job
-#         threading.Thread.__init__(self)
-#
-#     def run(self):
-#         while True:
-#             if self._q_job.qsize() > 0:
-#                 download_single_apk(self._q_job.get())  # 这是10个线程都运行这个下载函数
-#             else:
-#                 break
-
-
-# if __name__ == '__main__':
-#     # 初始化一个队列
-#     q = queue.Queue(0)
-#
-#     # 逐行读取excel里的url
-#     excel = openpyxl.load_workbook('Top_1000_app.xlsx')  # 读取excel里边的内容
-#     table = excel.active
-#     rows = table.max_row
-#     for r in range(2, rows + 1):  # 跟excel的第一行标题行无关，从第二行文字内容开始做替换工作
-#         apk_name = table.cell(row=r, column=2).value  # 获取app名字（中文）
-#         apk_url = table.cell(row=r, column=3).value  # 获取下载地址
-#         temp_str = apk_name + ";" + apk_url  # 不可以put列表进队列，只能尝试put字符串
-#         q.put(temp_str)
-#
-#     for i in range(10):  # 开启10个线程
-#         DownLoadThread(q).start()
