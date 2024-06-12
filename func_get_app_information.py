@@ -17,7 +17,9 @@ def get_permissions_report(permissions: dict):  # -> DataFrame
             value[i] = ' '.join(value[i].split())
         p.append([key] + value)
 
-    df = pd.DataFrame(p, columns=['Name', 'Security', 'Function', 'Describe'])
+    df = pd.DataFrame(p, columns=['Name', 'Security', 'Function', 'Description'])
+    columns = ['Name', 'Security', 'Function', 'Description']
+    df = df[columns]
     return df
 
 
@@ -106,15 +108,16 @@ def get_app_information(apk_data = None, apk_path : str = 'None' , target_path :
 
     df = pd.DataFrame(data)
     df = df[columns]#按columns排序
+    if target_path != 'None':
+        df.to_csv(target_path + "\\" + ''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ']) + ".csv",
+                  encoding='gbk', index=False)
+        return target_path + "\\" + ''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ']) + ".csv"
+
     basic = df.loc[:, 'name': 'providers']
     df_transposed = basic.transpose()
     df_transposed.columns = df_transposed.iloc[0]
     df_transposed = df_transposed.drop(df_transposed.index[0])
 
     #在这里对APK进行解析得到各种特征得到多个df(基本信息, 应用权限, 相关url, 类, activity)和image
-    if target_path == 'None':
-        return df_transposed,details_permissions,df['url'],df['classes'],df.loc[:, ['main_activity','activities']],df['icon']
-    df.to_csv(target_path+"\\"+''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ' ])+".csv",encoding='gbk',index=False)
-
-    return target_path+"\\"+''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ' ])+".csv"
+    return df_transposed,details_permissions,df['url'],df['classes'],df.loc[:, ['main_activity','activities']],df['icon']
 #get_app_information(r"D:\学习资料\反炸APP分析\apk\data\体测圈.apk.1",r"D:\学习资料\反炸APP分析\apk\data")

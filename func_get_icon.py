@@ -3,7 +3,7 @@ import zipfile
 from io import BytesIO
 
 CONST_SAVE_PATH = r"temp\icon"
-
+DEFAULT_IMAGE_PATH = r"C:\Users\杨子帆\Pictures\呆猫.jpg"
 
 
 def extract_icon_from_apk(apk_path, icon_path):
@@ -14,7 +14,11 @@ def extract_icon_from_apk(apk_path, icon_path):
             with zip_ref.open(icon_path) as icon_file:
                 # 读取图标数据
                 icon_data = icon_file.read()
-            return icon_data
+            if icon_path.endswith('.xml'):
+                print("Icon is in XML format. Returning default image.")
+                return None  # 返回空值，表示无效的图标
+            else:
+                return icon_data
         else:
             print("Icon path not found in APK.")
 
@@ -31,6 +35,8 @@ def get_icon(apk_data = None,apk_path : str = 'None' ,
     a = APK(apk_path, testzip=True)
     icon_path = a.get_app_icon()
     icon_data = extract_icon_from_apk(apk_path, icon_path)
+    if icon_data is None:
+        return DEFAULT_IMAGE_PATH
 
     if image:
         return icon_data
