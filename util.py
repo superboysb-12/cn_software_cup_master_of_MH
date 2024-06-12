@@ -219,8 +219,8 @@ class my_APK:
     def __init__(self, apk_path):
         self.a ,self.d,self.dx= AnalyzeAPK(apk_path)
         self.apk_path = apk_path
-        self.image_save_path = r"temp\icon"
-        self.default_image_path = r"C:\Users\杨子帆\Pictures\呆猫.jpg"
+        self.incon_save_path = r"temp\icon"
+        self.default_incon_path = r"assets\invalid_image.png"
 
     def extract_icon_from_apk(self, icon_path): # -> image_data or None
         with zipfile.ZipFile(self.apk_path, 'r') as zip_ref:
@@ -239,12 +239,12 @@ class my_APK:
                  image: bool = True):# -> str image_path
 
         if target_path == 'None':#使用默认的目标地址
-            target_path = self.image_save_path
+            target_path = self.incon_save_path
 
         icon_path = self.a.get_app_icon()
         icon_data = self.extract_icon_from_apk(icon_path)
         if icon_data is None:#无效图片数据,返回默认图片地址
-            return self.default_image_path
+            return self.default_incon_path
 
         if image:#直接返回图片数据
             return icon_data
@@ -277,7 +277,7 @@ class my_APK:
         return self.a.get_permissions()
     # list
 
-    def get_details_permissions(self):
+    def get_details_permissions(self): # -> list
         return self.a.get_details_permissions()
 
     def get_package(self):
