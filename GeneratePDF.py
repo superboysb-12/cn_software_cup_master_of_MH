@@ -1,5 +1,4 @@
 import random
-import datetime
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch
 from reportlab.pdfbase import pdfmetrics
@@ -11,9 +10,6 @@ from reportlab.graphics.charts.piecharts import Pie
 from reportlab.graphics.shapes import Drawing
 from reportlab.graphics.shapes import Circle
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.graphics.shapes import Image as DrawingImage
-from func_get_app_information import  get_app_information
-from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
 from reportlab.lib.colors import HexColor
