@@ -6,7 +6,9 @@ import os
 
 def get_app_information(apk_data = None,
                         apk_path : str = 'None' ,
-                        target_path : str = 'None'):
+                        target_path : str = 'None',
+                        rdf : bool = False #是否要直接返回dataframe而非保存
+                        ):
 
     if apk_path == 'None':
         if apk_data is None:
@@ -24,7 +26,7 @@ def get_app_information(apk_data = None,
     classes = tool.get_classes()
     md5 = tool.get_md5()
     url = 'None'#tool.get_url()
-    icon = tool.get_icon(target_path=target_path, target_name=name, image=False)
+    icon = tool.get_icon(target_path=r'temp\icon', target_name=name, image=False)
 
     file_size_bytes = os.path.getsize(apk_path)
     file_size = round(file_size_bytes/1024/1024,1)
@@ -45,7 +47,7 @@ def get_app_information(apk_data = None,
 
 
     columns = ['file_name', 'name', 'file_size', 'package_name', 'md5',
-               'label', 'signature_name', 'scan_time',
+               'label', 'signature_name', 'scan_time','details_permissions',
                'version_name', 'version_code', 'min_sdk', 'max_sdk',
                'services','receivers', 'providers', 'permissions',
                'icon','url','classes','main_activity','activities']
@@ -71,12 +73,15 @@ def get_app_information(apk_data = None,
         'permissions': [permissions],
         'icon':[icon],
         'url':[url],
-        'classes':[classes]
+        'classes':[classes],
+        'details_permissions':[details_permissions]
     }
 
     df = pd.DataFrame(data)
     df = df[columns]#按columns排序
     if target_path != 'None':#按分析时间创建csv文件
+        if rdf:
+            return df
         df.to_csv(target_path + "\\" + ''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ']) + ".csv",
                   encoding='gbk', index=False)
         return target_path + "\\" + ''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ']) + ".csv"
