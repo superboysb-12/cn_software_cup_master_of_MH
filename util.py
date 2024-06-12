@@ -1,6 +1,11 @@
 import hashlib
 import re
 from androguard.misc import AnalyzeAPK
+import zipfile
+from datetime import datetime
+import pandas as pd
+
+APK_SAVE_PATH = r"temp\apk"
 
 
 
@@ -201,10 +206,67 @@ def append(file_name, *args):
         for content in args:
             file.write(str(content) + "\n")
 
+def save_apk(apk_data): # -> str save_path
+    current_time = datetime.now()
+    time = current_time.strftime("%Y-%m-%d %H:%M:%S")
+    save_path = APK_SAVE_PATH +'\\'+''.join([c for c in time if c != ':' and c != '-' and c != ' ' ])+r".apk"
+    with open(save_path, "wb") as f:
+        f.write(apk_data)
+    return save_path
+
 
 class my_APK:
     def __init__(self, apk_path):
         self.a ,self.d,self.dx= AnalyzeAPK(apk_path)
+        self.apk_path = apk_path
+        self.image_save_path = r"temp\icon"
+        self.default_image_path = r"C:\Users\杨子帆\Pictures\呆猫.jpg"
+
+    def extract_icon_from_apk(self, icon_path): # -> image_data or None
+        with zipfile.ZipFile(self.apk_path, 'r') as zip_ref:
+            # 从 APK 文件中读取图标数据
+            with zip_ref.open(icon_path) as icon_file:
+                # 读取图标数据
+                icon_data = icon_file.read()
+            if icon_path.endswith('.xml'):
+                print("Icon is in XML format. Returning default image.")
+                return None  #图标文件为xml文件 返回空值，表示无效的图标
+            else:
+                return icon_data
+
+    def get_icon(self,target_path: str = 'None',
+                 target_name: str = 'None',
+                 image: bool = True):# -> str image_path
+
+        if target_path == 'None':#使用默认的目标地址
+            target_path = self.image_save_path
+
+        icon_path = self.a.get_app_icon()
+        icon_data = self.extract_icon_from_apk(icon_path)
+        if icon_data is None:#无效图片数据,返回默认图片地址
+            return self.default_image_path
+
+        if image:#直接返回图片数据
+            return icon_data
+        # 将图标数据写入目标文件地址
+        with open(target_path + '\\' + target_name + ".png", "wb") as f:
+            f.write(icon_data)
+        return target_path + '\\' + target_name + ".png"
+
+    def get_permissions_report(self):  # -> DataFrame
+        permissions = self.a.get_details_permissions()
+
+        p = []
+        for key, value in permissions.items():
+            for i in range(len(value)):
+                value[i] = value[i].replace('\n', '')
+                value[i] = ' '.join(value[i].split())
+            p.append([key] + value)
+
+        df = pd.DataFrame(p, columns=['Name', 'Security', 'Function', 'Description'])
+        columns = ['Name', 'Security', 'Function', 'Description']
+        df = df[columns]
+        return df
 
 
     def get_app_name(self):
@@ -214,6 +276,9 @@ class my_APK:
     def get_permissions(self):
         return self.a.get_permissions()
     # list
+
+    def get_details_permissions(self):
+        return self.a.get_details_permissions()
 
     def get_package(self):
         return self.a.get_package()
@@ -254,6 +319,16 @@ class my_APK:
     def get_providers(self):
         return self.a.get_providers()
     # list
+
+    def get_min_sdk_version(self): # -> list
+        return self.a.get_min_sdk_version()
+
+    def get_max_sdk_version(self): # -> list
+        return self.a.get_max_sdk_version()
+
+    def get_score(self): # -> str 检测结果
+        return '?'
+
 
     # def get_instructions(self):
     #     all_instructions_concatenated = ""
