@@ -4,7 +4,10 @@ import pandas as pd
 from PIL import Image
 from func_get_app_information import get_app_information as static_analyzer_apk
 from utils_download import download_apk
+from GeneratePDF import GeneratePDF
+
 st.title('ADS')
+#streamlit run web.py
 
 def highlight_dangerous(s):
     return ['background-color: red' if 'dangerous' in v else '' for v in s]
@@ -40,7 +43,7 @@ def static_analyzer(uploaded_file):
                 original_apk = uploaded_file.getbuffer()
                 with st.spinner('解析中...'):
                     time.sleep(2)
-                    st.session_state['df1'],st.session_state['df2'],st.session_state['df3'],st.session_state['df4'],st.session_state['df5'],st.session_state['image'] = static_analyzer_apk(original_apk)
+                    (st.session_state['df1'],st.session_state['df2'],st.session_state['df3'],st.session_state['df4'],st.session_state['df5'],st.session_state['image']),st.session_state['apk_path'] = static_analyzer_apk(original_apk)
                     st.session_state['image']=st.session_state['image'][0]
 
                     #在这里对APK进行解析得到各种特征得到多个df(基本信息,应用权限,相关url,类,activity)和image
@@ -202,7 +205,8 @@ def side_bar():
                     st.info('请勾选至少一项')
                 elif not ((static_result == True and st.session_state['static_completed'] == False) or (dynamic_result == True and st.session_state['dynamic_completed'] == False)):
                     with st.spinner('正在生成'):
-                        #generate_report(static_result,dynamic_result)
+                        tool = GeneratePDF(apk_path=st.session_state['apk_path'])
+                        tool.generate_report()
                         #传入可视化包含的结果,生成对应的报告
                         time.sleep(2)
                         st.session_state['report_completed'] = True

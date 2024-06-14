@@ -179,7 +179,12 @@ class GeneratePDF:
         #DrawPageInfo(c)
         c.restoreState()
 
-    def save_PDF(self,target_path,target_name):
+    def generate_report(self,
+                        target_path = TARGET_PATH,
+                        target_name = TARGET_NAME,
+                        static_result:bool = True,
+                        dynamic_result:bool = True
+                        ):
         # 创建文档
         doc = SimpleDocTemplate(target_path+'\\'+target_name+'.pdf')
         Story = [Spacer(1, -0.1 * inch)]
@@ -225,6 +230,7 @@ class GeneratePDF:
 
         # 保存文档
         doc.build(Story, onFirstPage=self.myFirstPage, onLaterPages=self.myLaterPages)
+        print('PDF successfully saved!')
 
 
 

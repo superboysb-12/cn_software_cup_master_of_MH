@@ -2,6 +2,8 @@ from util import my_APK,save_apk
 from datetime import datetime
 import pandas as pd
 import os
+from model_util import Predictor
+
 
 
 def get_app_information(apk_data = None,
@@ -18,6 +20,7 @@ def get_app_information(apk_data = None,
 
     tool = my_APK(apk_path)
 
+
     file_name = apk_path.split('\\')[-1]
     name = tool.get_app_name()
     current_time = datetime.now()
@@ -31,7 +34,11 @@ def get_app_information(apk_data = None,
     file_size_bytes = os.path.getsize(apk_path)
     file_size = round(file_size_bytes/1024/1024,1)
     signature_name = tool.get_signature_names()
-    label = tool.get_score()
+
+    predictor = Predictor()
+    predictor.predict(tool.get_info())
+    label = '涉诈' if predictor.predict(tool.get_info()) else '非涉诈'
+
     package_name = tool.get_package()
     version_name = tool.get_androidversion_name()
     version_code = tool.get_androidversion_code()
@@ -92,5 +99,5 @@ def get_app_information(apk_data = None,
     df_transposed.columns = df_transposed.iloc[0]
     df_transposed = df_transposed.drop(df_transposed.index[0])
 
-    #在这里对APK进行解析得到各种特征得到多个df(基本信息, 应用权限, 相关url, 类, activity)和image
-    return df_transposed,details_permissions,df['url'],df['classes'],df.loc[:, ['main_activity','activities']],df['icon']
+    #在这里对APK进行解析得到各种特征得到多个df(基本信息, 应用权限, 相关url, 类, activity)和image 以及apk_path
+    return (df_transposed,details_permissions,df['url'],df['classes'],df.loc[:, ['main_activity','activities']],df['icon']),apk_path
