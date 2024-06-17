@@ -14,23 +14,20 @@ def highlight_dangerous(s):
 
 # 重置分析状态的函数
 def reset_session_state():
-    st.session_state['analysis_complete'] = False
-    st.session_state['recognition_complete'] = False
     st.session_state['static_completed'] = False
     st.session_state['dynamic_completed'] = False
     st.session_state['report_completed'] = False
+    st.session_state['download_stats'] = 1
+    st.session_state['progress'] = 0
     st.session_state['df1'] = pd.DataFrame()
     st.session_state['df2'] = pd.DataFrame()
     st.session_state['df3'] = pd.DataFrame()
     st.session_state['df4'] = pd.DataFrame()
     st.session_state['df5'] = pd.DataFrame()
     st.session_state['image'] = None
-    st.session_state["prediction_type"] = None
 
 def static_analyzer(uploaded_file):
     # 初始化 session_state
-    if 'analysis_complete' not in st.session_state:
-        st.session_state['analysis_complete'] = False
 
     st.header('静态分析模式')
     if st.button('开始分析'):
@@ -43,19 +40,17 @@ def static_analyzer(uploaded_file):
                     time.sleep(2)
                     (st.session_state['df1'],st.session_state['df2'],st.session_state['df3'],st.session_state['df4'],st.session_state['df5'],st.session_state['image']),st.session_state['apk_path'] = static_analyzer_apk(original_apk)
                     st.session_state['image']=st.session_state['image'][0]
-                    st.session_state['type']=st.session_state['df1']['label'][0]
-                    #在这里对APK进行解析得到各种特征得到多个df(基本信息,应用权限,相关url,类,activity)和image
 
 
-                st.session_state['analysis_complete'] = True
+                st.session_state['static_completed'] = True
             except Exception as e:
-                st.session_state['analysis_complete'] = False
+                st.session_state['static_completed'] = False
                 st.exception(e)
-    if st.session_state['analysis_complete'] == True:
+    if st.session_state['static_completed'] == True:
             st.success('分析完成')
 
-    if st.session_state['analysis_complete'] == True:
-        def data_visualization(df1,df2,df3,df4,df5,image,type):
+    if st.session_state['static_completed'] == True:
+        def data_visualization(df1,df2,df3,df4,df5,image):
             st.image(image,
                      caption='APP图像',
                      width=100
@@ -75,10 +70,6 @@ def static_analyzer(uploaded_file):
                 st.write(df4)
             else:
                 st.write(df5)
-            if type == '正常':
-                st.success('识别结果为: 正常 APP')
-            else:
-                st.warning('识别结果为: 涉诈 APP')
 
         data_visualization(st.session_state['df1'],
                            st.session_state['df2'],
@@ -86,7 +77,7 @@ def static_analyzer(uploaded_file):
                            st.session_state['df4'],
                            st.session_state['df5'],
                            st.session_state['image'],
-                           st.session_state['type'])
+                           )
 
 
 def dynamic_analyzer():
@@ -121,6 +112,11 @@ def side_bar():
         else:
             reset_session_state()
         def download():
+            if 'progress' not in st.session_state:
+                st.session_state['progress'] = 0
+            def progress_callback():
+                progress_bar.progress(st.session_state['progress'])
+
             download_stats = 1
             if 'link' not in st.session_state:
                 st.session_state['link'] = ''
@@ -135,18 +131,17 @@ def side_bar():
                 format_func=str,
                 help='非必须,下载的APK在/apks中'
             )
+            if 'download_method' not in st.session_state:
+                st.session_state['download_method'] = 0
+
             if download_methods == '链接下载':
                 link = st.text_input('请输入链接')
                 if link == None:
                     st.info('请输入链接')
                 elif st.session_state['link'] != link:
+                    st.session_state['download_method'] = 1
                     st.session_state['link'] = link
-                    with st.spinner('下载中...'):
-                        time.sleep(2)
-                        download_stats = download_apk(1, link)
-                        #下载的文件保存在/data中
-                        #1,2,3对应3个下载方式
-                        #返回下载情况,true和false
+
             elif download_methods == '二维码下载':
                 uploaded_image = st.file_uploader(
                     label="请上传二维码",
@@ -156,9 +151,8 @@ def side_bar():
                 if uploaded_image is not None:
                     QR_code = uploaded_image.getbuffer()
                     if st.session_state['QR_code'] != QR_code:
+                        st.session_state['download_method'] = 2
                         st.session_state['QR_code'] = QR_code
-                        with st.spinner('下载中...'):
-                            download_stats = download_apk(2,qrcode = QR_code)
                 else:
                     st.info('请上传二维码')
 
@@ -167,14 +161,24 @@ def side_bar():
                 if web == None:
                     st.info('请输入网址')
                 elif st.session_state['web'] != web:
+                    st.session_state['download_method'] = 3
                     st.session_state['web'] = web
-                    with st.spinner('下载中...'):
-                        time.sleep(2)
-                        download_stats = download_apk(3, web)
-            #print('stats:',download_stats)
-            if download_stats == 0:
+
+            progress_bar = st.empty()
+            if st.button('开始下载'):
+                if st.session_state['download_method'] == 0:
+                    st.info('')
+                elif st.session_state['download_method'] == 1:
+                    st.session_state['download_stats'] = download_apk(1, st.session_state['link'], progress_callback=progress_callback)
+                elif st.session_state['download_method'] ==2:
+                    st.session_state['download_stats'] = download_apk(2, st.session_state['QR_code'], progress_callback=progress_callback)
+                elif st.session_state['download_method'] ==3:
+                    st.session_state['download_stats'] = download_apk(3, st.session_state['web'], progress_callback=progress_callback)
+            if 'download_stats' not in st.session_state:
+                st.session_state['download_stats'] = 1
+            if st.session_state['download_stats'] == 0:
                 st.success('下载成功')
-            elif download_stats == -1:
+            elif st.session_state['download_stats'] == -1:
                 st.error('下载失败')
             else:
                 pass
@@ -204,7 +208,3 @@ def side_bar():
         dynamic_analyzer()
 
 side_bar()
-
-#目前问题:
-#1.二维码传不了路径
-#2.当链接不完整时无法判断为下载失败
