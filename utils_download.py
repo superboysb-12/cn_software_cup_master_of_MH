@@ -8,12 +8,16 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 import numpy as np
 import streamlit as st
+from urllib.parse import urljoin
 
 curdir = os.getcwd()  # 获取当前路径current work directory
 
 data_dir = os.path.join(curdir, r"temp\data")
 
-
+def check_url(url,page_url):
+    if not url.startswith('http'):
+        url = page_url + url
+        return url
 # 创建文件夹
 if not os.path.exists(data_dir):
     os.makedirs(data_dir)
@@ -30,7 +34,7 @@ def check_for_apk(directory=data_dir):
 def get_redirected_url(url, page_url):
     try:
         if not url.startswith('http'):
-            url = page_url + url  # 拼接成绝对URL
+            url = page_url + url
         response = requests.head(url, allow_redirects=True)
         redirected_url = response.url
         return redirected_url
@@ -72,7 +76,10 @@ def get_dynamic_links(url):
 def get_all_links(url):
     static_links = get_static_links(url)
     dynamic_links = get_dynamic_links(url)
-    all_links = static_links + dynamic_links  # 将动态链接添加到列表中
+    all_links = static_links + dynamic_links
+    for i in range(len(all_links)):
+        if not all_links[i].startswith('http'):
+            all_links[i] = urljoin(url, all_links[i])
     apk_links = []
     for link in all_links:
         if is_apk_url(link):
@@ -86,7 +93,20 @@ def get_all_links(url):
 
 
 def is_apk_url(url):
-    return url.endswith('.apk')
+    if url.endswith('.apk'):
+        return True
+    else:
+        try:
+            response = requests.head(url)
+            content_type = response.headers.get('Content-Type')
+
+            if content_type == 'application/vnd.android.package-archive':
+                return True
+            else:
+                return False
+        except requests.exceptions.RequestException as e:
+            print(f"Error: {e}")
+            return False
 
 
 def get_qrcode(image_binary):
@@ -108,8 +128,22 @@ def generate_header():
     return header
 
 
+def sanitize_and_validate_filename(filename):
+    cleaned_filename = filename.split('?')[0]
+    sanitized_filename = "".join(c for c in cleaned_filename if c.isalnum() or c in (' ', '.', '_')).rstrip()
+    if not sanitized_filename.endswith('.apk'):
+        sanitized_filename += '.apk'
+    return sanitized_filename
+
+
 def download_single_apk(apk_url, progress_callback=None):
-    save_path = os.path.join(data_dir, os.path.basename(apk_url))
+    if is_apk_url(apk_url)==False:
+        return -1
+
+
+    save_path = sanitize_and_validate_filename(os.path.basename(apk_url))
+    save_path=os.path.join(data_dir,save_path)
+
     try:
         with requests.get(apk_url, headers=generate_header(), allow_redirects=True, timeout=180, stream=True) as r:
             r.raise_for_status()
@@ -158,7 +192,6 @@ def download_apk(method_code=1, url = None, qrcode = None, progress_callback=Non
                 download_single_apk(apk_url,progress_callback)
     elif method_code == 3:
         urls_a = get_all_links(url)
-
         for apk_url in urls_a:
             download_single_apk(apk_url,progress_callback)
     else:
