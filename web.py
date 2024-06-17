@@ -31,21 +31,19 @@ def static_analyzer(uploaded_file):
     # 初始化 session_state
     if 'analysis_complete' not in st.session_state:
         st.session_state['analysis_complete'] = False
-    if 'recognition_complete' not in st.session_state:
-        st.session_state['recognition_complete'] = False
 
     st.header('静态分析模式')
-    if st.button('开始解析'):
+    if st.button('开始分析'):
         if uploaded_file is None:
             st.info('请先上传APK')
         else:
             try:
                 original_apk = uploaded_file.getbuffer()
-                with st.spinner('解析中...'):
+                with st.spinner('分析中...'):
                     time.sleep(2)
                     (st.session_state['df1'],st.session_state['df2'],st.session_state['df3'],st.session_state['df4'],st.session_state['df5'],st.session_state['image']),st.session_state['apk_path'] = static_analyzer_apk(original_apk)
                     st.session_state['image']=st.session_state['image'][0]
-
+                    st.session_state['type']=st.session_state['df1']['label'][0]
                     #在这里对APK进行解析得到各种特征得到多个df(基本信息,应用权限,相关url,类,activity)和image
 
 
@@ -54,17 +52,17 @@ def static_analyzer(uploaded_file):
                 st.session_state['analysis_complete'] = False
                 st.exception(e)
     if st.session_state['analysis_complete'] == True:
-            st.success('解析完成')
+            st.success('分析完成')
 
     if st.session_state['analysis_complete'] == True:
-        def data_visualization(df1,df2,df3,df4,df5,image):
+        def data_visualization(df1,df2,df3,df4,df5,image,type):
             st.image(image,
                      caption='APP图像',
                      width=100
                      )
             data_option = st.selectbox(
                 index=0,
-                label='解析结果',
+                label='分析结果',
                 options=['基本信息', '应用权限','相关URL','Class','Activity']
             )
             if data_option == '基本信息':
@@ -77,34 +75,19 @@ def static_analyzer(uploaded_file):
                 st.write(df4)
             else:
                 st.write(df5)
+            if type == '正常':
+                st.success('识别结果为: 正常 APP')
+            else:
+                st.warning('识别结果为: 涉诈 APP')
 
         data_visualization(st.session_state['df1'],
                            st.session_state['df2'],
                            st.session_state['df3'],
                            st.session_state['df4'],
                            st.session_state['df5'],
-                           st.session_state['image'])
+                           st.session_state['image'],
+                           st.session_state['type'])
 
-    if st.button('开始识别'):
-        if st.session_state['analysis_complete'] == False:
-            st.info('请先解析APK')
-        else:
-            try:
-                with st.spinner('识别中...'):
-                    time.sleep(2)
-                    #st.session_state['prediction_type'] = predict(data)
-                    #在这里调用模型,将上面的特征输入,返回识别出的类型
-                    st.session_state['prediction_type'] = '色情'
-                st.session_state['recognition_complete'] = True
-            except Exception as e:
-                st.session_state['recognition_complete'] = False
-                st.error('识别失败')
-                st.exception(e)
-    if st.session_state['recognition_complete'] == True:
-        st.session_state['static_completed'] = True
-        if st.session_state["prediction_type"] == '正常':
-            st.success('识别结果为: 正常 APP')
-        st.warning(f'识别结果为: {st.session_state["prediction_type"]} 类APP')
 
 def dynamic_analyzer():
     st.header('动态分析模式')
@@ -208,7 +191,6 @@ def side_bar():
                         tool = GeneratePDF(apk_path=st.session_state['apk_path'])
                         tool.generate_report()
                         #传入可视化包含的结果,生成对应的报告
-                        time.sleep(2)
                         st.session_state['report_completed'] = True
                 else:
                     st.info('勾选的内容尚未分析完成')
