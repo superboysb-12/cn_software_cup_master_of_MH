@@ -8,12 +8,16 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 import numpy as np
 import streamlit as st
-import re
+from urllib.parse import urljoin
+
 curdir = os.getcwd()  # 获取当前路径current work directory
 
 data_dir = os.path.join(curdir, r"temp\data")
 
-
+def check_url(url,page_url):
+    if not url.startswith('http'):
+        url = page_url + url
+        return url
 # 创建文件夹
 if not os.path.exists(data_dir):
     os.makedirs(data_dir)
@@ -30,7 +34,7 @@ def check_for_apk(directory=data_dir):
 def get_redirected_url(url, page_url):
     try:
         if not url.startswith('http'):
-            url = page_url + url  # 拼接成绝对URL
+            url = page_url + url
         response = requests.head(url, allow_redirects=True)
         redirected_url = response.url
         return redirected_url
@@ -72,7 +76,10 @@ def get_dynamic_links(url):
 def get_all_links(url):
     static_links = get_static_links(url)
     dynamic_links = get_dynamic_links(url)
-    all_links = static_links + dynamic_links  # 将动态链接添加到列表中
+    all_links = static_links + dynamic_links
+    for i in range(len(all_links)):
+        if not all_links[i].startswith('http'):
+            all_links[i] = urljoin(url, all_links[i])
     apk_links = []
     for link in all_links:
         if is_apk_url(link):
@@ -130,6 +137,10 @@ def sanitize_and_validate_filename(filename):
 
 
 def download_single_apk(apk_url, progress_callback=None):
+    if is_apk_url(apk_url)==False:
+        return -1
+
+
     save_path = sanitize_and_validate_filename(os.path.basename(apk_url))
     save_path=os.path.join(data_dir,save_path)
 
