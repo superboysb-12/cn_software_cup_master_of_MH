@@ -31,4 +31,6 @@ class Predictor:
             sample = torch.tensor(sample, dtype=torch.float32)
             output = self.model(sample)
             predicted_class = torch.argmax(output, dim=1).item()
-        return predicted_class
+            probabilities = F.softmax(output, dim=1)
+            confidence = probabilities[0, predicted_class].item()
+        return predicted_class, confidence
