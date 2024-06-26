@@ -5,8 +5,17 @@ from time import sleep
 import csv
 import pandas as pd
 
+#进行root
+root_cmd = ['adb', 'root']
+result = subprocess.run(root_cmd, capture_output=True, text=True)
+print(result.stdout)
+sleep(10)#等root
+
+
+
+
 def start_tcpdump(temp_file):
-    capture_cmd = ['adb', 'shell', f'tcpdump -i any -w {temp_file}']
+    capture_cmd = ['adb', 'shell', f'tcpdump -i any -p -s 0 -w {temp_file} not host 172.16.1.2']
     proc = subprocess.Popen(capture_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     return proc
 
@@ -68,6 +77,7 @@ local_capture_file = 'temp/capture.pcap'
 check_and_clear_file(local_capture_file)
 
 times = 0
+
 while True:
     print(times)
     times+=1
@@ -83,7 +93,12 @@ while True:
     pull_file(temp_file, local_temp_file)
 
     merge_files(local_temp_file, local_capture_file)
+
+
     # 使用函数转换文件
     convert_to_csv('temp/capture.pcap', 'temp/capture.csv')
     csv_to_dataframe('temp/capture.csv')
 
+#tcpdump -i any -p -s 0 -w /sdcard/temp.pcap not host 172.16.1.2
+#tcpdump -i any -p -s 0 -w /sdcard/temp.pcap -v -nn
+#tcpdump -i any -p -s 0 -w /sdcard/temp.pcap -vvv -nn
