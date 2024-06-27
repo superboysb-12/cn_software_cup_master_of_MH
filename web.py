@@ -81,9 +81,35 @@ def static_analyzer(uploaded_file):
 
 
 def dynamic_analyzer():
+
+    if 'dynamic_completed' not in st.session_state:
+        st.session_state['dynamic_completed'] = False
+    if 'capturing' not in st.session_state:
+        st.session_state['capturing'] = 0
+    if 'capture_pkts' not in st.session_state:
+        st.session_state['capture_pkts'] = None
+
     st.header('动态分析模式')
-    st.write('在这里展示动态分析的信息。')
-    #st.session_state['dynamic_completed'] = True
+    show_pkts = st.empty()
+    def pkts_callback():
+        show_pkts.write(st.session_state['capture_pkts'])
+
+    if st.button('开始抓包'):
+        #start_capture(st.session_state['capture_pkts'],pkts_callback)
+        st.session_state['capturing'] = 1
+
+    if st.session_state['capturing'] == 1:
+        if st.button('停止抓包'):
+            #stop_capture()
+            st.session_state['capturing'] = 2
+
+    if st.session_state['capturing'] == 1:
+        st.info('正在抓包')
+
+    if st.session_state['capturing'] == 2:
+        show_pkts.write(st.session_state['capture_pkts'])
+
+        st.session_state['dynamic_completed'] = True
 
 def side_bar():
     if 'static_completed' not in st.session_state:
