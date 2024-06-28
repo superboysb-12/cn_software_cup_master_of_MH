@@ -5,9 +5,12 @@ from PIL import Image
 from func_get_app_information import get_app_information as static_analyzer_apk
 from utils_download import download_apk
 from GeneratePDF import GeneratePDF
+from dynamic_analysis import PacketCapture
 
 st.title('ADS')
 #streamlit run web.py
+if 'capture_pkts' not in st.session_state:
+    st.session_state['capture_pkts'] = None
 
 def highlight_dangerous(s):
     return ['background-color: red' if 'dangerous' in v else '' for v in s]
@@ -80,8 +83,10 @@ def static_analyzer(uploaded_file):
                            )
 
 
-def dynamic_analyzer():
 
+
+
+def dynamic_analyzer():
     if 'dynamic_completed' not in st.session_state:
         st.session_state['dynamic_completed'] = False
     if 'capturing' not in st.session_state:
@@ -91,25 +96,41 @@ def dynamic_analyzer():
 
     st.header('动态分析模式')
     show_pkts = st.empty()
-    def pkts_callback():
-        show_pkts.write(st.session_state['capture_pkts'])
+
+    # Create packet capture object
+    if 'capture_thread' not in st.session_state:
+        st.session_state['capture_thread'] = PacketCapture()
 
     if st.button('开始抓包'):
-        #start_capture(st.session_state['capture_pkts'],pkts_callback)
         st.session_state['capturing'] = 1
+        if not st.session_state['capture_thread'].is_alive():
+            st.session_state['capture_thread'].start()
 
-    if st.session_state['capturing'] == 1:
-        if st.button('停止抓包'):
-            #stop_capture()
-            st.session_state['capturing'] = 2
+    if st.session_state['capture_thread']:
+        st.session_state['capture_pkts'] = st.session_state['capture_thread'].get_data()
+        show_pkts.write(st.session_state['capture_pkts'])
+
+        if st.session_state['capturing'] == 1:
+            if st.button('停止抓包'):
+                st.session_state['capture_thread'].stop()
+                st.write('已停止抓包。')
+                st.session_state['capturing'] = 2
+                st.session_state['capture_thread'].join()#等待退出
 
     if st.session_state['capturing'] == 1:
         st.info('正在抓包')
 
-    if st.session_state['capturing'] == 2:
-        show_pkts.write(st.session_state['capture_pkts'])
+    # 实时更新抓包数据显示
+    while st.session_state['capturing'] == 1:
+        st.session_state['capture_pkts'] = st.session_state['capture_thread'].get_data()  # 获取最新抓包数据
+        show_pkts.write(st.session_state['capture_pkts'])  # 更新显示最新抓包数据
+        time.sleep(1)  # 调整间隔时间，以控制实时显示频率
 
+    # 停止抓包后
+    if st.session_state['capturing'] == 2:
+        show_pkts.write(st.session_state['capture_pkts'])  # 显示最终抓包数据
         st.session_state['dynamic_completed'] = True
+
 
 def side_bar():
     if 'static_completed' not in st.session_state:
