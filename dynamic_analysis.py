@@ -1,4 +1,3 @@
-import os
 import subprocess
 from scapy.all import PcapReader, PcapWriter, IP
 from time import sleep
@@ -7,7 +6,7 @@ import pandas as pd
 import threading
 import time
 import os
-
+local_capture_file = 'temp/capture.pcap'
 
 def root():
     #进行root
@@ -33,7 +32,6 @@ def stop_tcpdump(proc):
 def pull_file(remote_file, local_file):
     pull_cmd = ['adb', 'pull', remote_file, local_file]
     result = subprocess.run(pull_cmd, capture_output=True, text=True)
-    #print(result.stdout)
 
 def merge_files(src_file, dest_file):
     writer = PcapWriter(dest_file, append=True)
@@ -51,11 +49,9 @@ def check_and_clear_file(file_path):
 def convert_to_csv(pcap_file, csv_file):
     with PcapReader(pcap_file) as packets, open(csv_file, 'w', newline='') as out_csv:
         csv_writer = csv.writer(out_csv)
-        # 写入标题行，这里只是一个示例，您可能需要根据实际情况添加或删除字段
         csv_writer.writerow(['timestamp', 'src', 'dst', 'protocol', 'length'])
 
         for packet in packets:
-            # 提取数据包信息，这里只是一个示例，您可能需要根据实际情况添加或删除字段
             src = packet[IP].src if IP in packet else ''
             dst = packet[IP].dst if IP in packet else ''
             protocol = packet[IP].proto if IP in packet else ''
@@ -69,56 +65,13 @@ def csv_to_dataframe(csv_file):
     df = pd.read_csv(csv_file)
     return df
 
-# 假设 'temp' 目录位于项目根目录下
-local_capture_file = 'temp/capture.pcap'
-check_and_clear_file(local_capture_file)
-
-'''
-thread = None
-thread_lock = threading.Lock()  # 添加一个锁对象
-def run_capture(stdf,df_call_back):
-
-    root()
-    times = 0
-    while True:
-        #print(times)
-        times += 1
-        temp_file = '/sdcard/temp.pcap'
-        proc = start_tcpdump(temp_file)
-        time.sleep(10)  # 等待一段时间以收集足够的数据包
-        stop_tcpdump(proc)
-
-        local_temp_file = 'temp/temp.pcap'
-        check_and_clear_file(local_temp_file)
-        pull_file(temp_file, local_temp_file)
-        merge_files(local_temp_file, local_capture_file)
-
-        # 使用函数转换文件
-        convert_to_csv('temp/capture.pcap', 'temp/capture.csv')
-        file_path = 'temp/capture.csv'
-
-        if os.path.exists(file_path):
-            stdf = csv_to_dataframe('temp/capture.csv')
-            with thread_lock:  # 使用锁保护共享资源
-                df_call_back(stdf)
-
-def start_capture(stdf,df_call_back):
-    global thread
-    thread = threading.Thread(target=run_capture,args=(stdf,df_call_back))
-    thread.start()
-    print('capture start')
-
-def stop_capture():
-    global thread
-    thread.join()
-'''
-
 
 class PacketCapture(threading.Thread):
     def __init__(self):
         super().__init__()
         self._stop_event = threading.Event()
         self.data = None
+        check_and_clear_file(local_capture_file)
         root()
 
     def run(self):
@@ -141,14 +94,10 @@ class PacketCapture(threading.Thread):
                 self.data = csv_to_dataframe('temp/capture.csv')
                 print(self.data)
 
-
     def stop(self):
         self._stop_event.set()
 
     def get_data(self):
         return pd.DataFrame(self.data)
-#root()
-#capture()
-#tcpdump -i any -p -s 0 -w /sdcard/temp.pcap not host 172.16.1.2
-#tcpdump -i any -p -s 0 -w /sdcard/temp.pcap -v -nn
-#tcpdump -i any -p -s 0 -w /sdcard/temp.pcap -vvv -nn
+
+#tcpdump -i any -p -s 0 -w /sdcard/temp.pcap -v -nn not host 172.16.1.2

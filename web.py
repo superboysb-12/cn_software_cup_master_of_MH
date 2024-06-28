@@ -6,11 +6,9 @@ from func_get_app_information import get_app_information as static_analyzer_apk
 from utils_download import download_apk
 from GeneratePDF import GeneratePDF
 from dynamic_analysis import PacketCapture
+#streamlit run web.py
 
 st.title('ADS')
-#streamlit run web.py
-if 'capture_pkts' not in st.session_state:
-    st.session_state['capture_pkts'] = None
 
 def highlight_dangerous(s):
     return ['background-color: red' if 'dangerous' in v else '' for v in s]
