@@ -111,7 +111,7 @@ def dynamic_analyzer():
         if st.session_state['capturing'] == 1:
             if st.button('停止抓包'):
                 st.session_state['capture_thread'].stop()
-                st.write('已停止抓包。')
+                st.info('已停止抓包')
                 st.session_state['capturing'] = 2
                 st.session_state['capture_thread'].join()#等待退出
 
@@ -127,8 +127,51 @@ def dynamic_analyzer():
     # 停止抓包后
     if st.session_state['capturing'] == 2:
         show_pkts.write(st.session_state['capture_pkts'])  # 显示最终抓包数据
+
+        #IPs = get_IPs()
+        IPs = st.session_state['capture_pkts'][st.session_state['capture_pkts'].columns[2]].value_counts()
+        st.write(IPs)
+
         st.session_state['dynamic_completed'] = True
 
+        if st.button('添加到黑/白名单'):
+            #add_list(IPs)
+            st.success('添加成功')
+            pass
+
+
+
+def adlist():
+    def get_alowlist():
+        data = {
+            'IP': ['224.0.0.251', None, '121.251.251.251', '172.16.1.4'],
+        }
+        df = pd.DataFrame(data)
+        return df
+    def get_denylist():
+        data = {
+            'IP': ['172.16.1.4', None, '172.16.1.4', '121.251.251.251'],
+        }
+        df = pd.DataFrame(data)
+        return df
+
+    option = st.selectbox(
+        label='黑白名单',
+        options=['白名单', '黑名单']
+    )
+
+    alowlist = get_alowlist()
+    denylist = get_denylist()
+
+    if option == '白名单':
+        st.write(alowlist)
+    else:
+        st.write(denylist)
+
+    IP = st.text_input('添加黑/白名单')
+    if st.button('添加'):
+        #add_list(IP,option)
+        st.success('添加成功')
 
 def side_bar():
     if 'static_completed' not in st.session_state:
@@ -141,8 +184,8 @@ def side_bar():
     #侧栏选择分析方式
     with st.sidebar:
         option = st.selectbox(
-            label='分析方式',
-            options=['静态分析', '动态分析']
+            label='分析方式/黑白名单',
+            options=['静态分析', '动态分析','黑白名单']
         )
 
         #文件上传
@@ -251,5 +294,7 @@ def side_bar():
         static_analyzer(uploaded_file)
     elif option == '动态分析':
         dynamic_analyzer()
+    else:
+        adlist()
 
 side_bar()
