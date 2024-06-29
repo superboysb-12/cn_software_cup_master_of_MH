@@ -1,11 +1,17 @@
 import subprocess
-from scapy.all import PcapReader, PcapWriter, IP
+from scapy.all import *
 from time import sleep
 import csv
 import pandas as pd
 import threading
 import time
 import os
+'''
+需要关防火墙
+
+
+'''
+
 local_capture_file = 'temp/capture.pcap'
 
 def root():
@@ -46,19 +52,42 @@ def check_and_clear_file(file_path):
         os.remove(file_path)
     open(file_path, 'w').close()
 
+
+
+def get_protocol_name(packet):
+    layers = []
+    current_layer = packet
+    while current_layer:
+        layers.append(current_layer.name)
+        current_layer = current_layer.payload
+
+    # 去除'cooked linux'协议，找到最后一个非'cooked linux'的协议名
+    protocol_name = None
+    for layer in reversed(layers):
+        if layer != 'cooked linux':
+            protocol_name = layer
+            break
+
+    if protocol_name:
+        return protocol_name
+    else:
+        return 'Unknow'
+
+
 def convert_to_csv(pcap_file, csv_file):
     with PcapReader(pcap_file) as packets, open(csv_file, 'w', newline='') as out_csv:
         csv_writer = csv.writer(out_csv)
-        csv_writer.writerow(['timestamp', 'src', 'dst', 'protocol', 'length'])
+        csv_writer.writerow(['timestamp', 'src', 'dst','protocol', 'protocol_name', 'length'])
 
         for packet in packets:
             src = packet[IP].src if IP in packet else ''
             dst = packet[IP].dst if IP in packet else ''
             protocol = packet[IP].proto if IP in packet else ''
+            protocol_name = get_protocol_name(packet)
             length = len(packet)
 
             # 写入每个数据包的信息
-            csv_writer.writerow([packet.time, src, dst, protocol, length])
+            csv_writer.writerow([packet.time, src, dst,protocol, protocol_name, length])
 
 def csv_to_dataframe(csv_file):
     # 读取CSV文件到DataFrame
