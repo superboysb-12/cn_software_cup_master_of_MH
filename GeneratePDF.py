@@ -13,8 +13,12 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
 from reportlab.lib.colors import HexColor
-from func_get_app_information import get_app_information
+from func_get_app_information import get_app_information,get_dynamic_analysis_information
 from datetime import datetime
+#下载库之后要添加宋体文件
+
+
+
 current_time = datetime.now()
 scan_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
 TARGET_PATH = r'temp\PDF'
@@ -36,8 +40,9 @@ PAGE_HEIGHT = A4[1]
 PAGE_WIDTH = A4[0]
 class GeneratePDF:
 
-    def __init__(self,apk_path):
+    def __init__(self,apk_path,d_data_file_path = 'None'):
         self.apk_path = apk_path
+        self.d_data_file_path = d_data_file_path
 
         # 获取APP信息
         self.info = get_app_information(apk_path=apk_path, target_path='target_path',
@@ -55,7 +60,7 @@ class GeneratePDF:
         self.info_data = []
         # 处理信息文本
         for column in columns:
-            if column in ['details_permissions', 'icon']:
+            if column in ['details_permissions', 'icon','classes','url']:
                 continue
             attribute_name = column
             attribute_name = attribute_name.replace('_', ' ')
@@ -223,10 +228,54 @@ class GeneratePDF:
         # 设置每列的宽度 #font_size = 6
         col_widths = [170, 80,260,50]
         # 创建表格
+        print(self.permissions_data)
         table = Table(self.permissions_data, colWidths=col_widths)
         table.setStyle(self.permissions_style)
         # 添加表格到文档，使用 KeepTogether 来确保表格跨页时整体显示在一页上
         Story.append(table)
+        Story.append(Spacer(1, 1 * inch))
+
+
+        # 添加dynamic analysis部分
+        Story.append(Paragraph("dynamic analysis", self.titleStyle))
+        Story.append(Spacer(1, 0.2 * inch))
+        #srcs,dsts,protos,unique_data
+        datas = get_dynamic_analysis_information(self.d_data_file_path)
+        for i in range(len(datas)):
+            datas[i] = [datas[i].columns.tolist()] + datas[i].values.tolist()
+            print(datas[i])
+            table = Table(datas[i])
+            #table.setStyle(self.permissions_style)
+            # 添加表格到文档，使用 KeepTogether 来确保表格跨页时整体显示在一页上
+            Story.append(table)
+            Story.append(Spacer(1, 0.2 * inch))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         # 保存文档
         doc.build(Story, onFirstPage=self.myFirstPage, onLaterPages=self.myLaterPages)

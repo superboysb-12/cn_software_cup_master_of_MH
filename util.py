@@ -4,6 +4,8 @@ from androguard.misc import AnalyzeAPK
 import zipfile
 from datetime import datetime
 import pandas as pd
+from androguard.util import set_log
+set_log("ERROR")#set log message only ERROR
 
 APK_SAVE_PATH = r"temp\apk"
 

@@ -26,10 +26,14 @@ def get_app_information(apk_data = None,
     current_time = datetime.now()
     scan_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
 
-    classes = tool.get_classes()
+    classes = pd.DataFrame(tool.get_classes())
+    print(type(classes))
+    print(classes)
 
     md5 = tool.get_md5()
-    url = 'None'#tool.get_url()
+    url = pd.DataFrame(tool.get_url())
+    print(type(url))
+    print(url)
     icon = tool.get_icon(target_path=r'temp\icon', target_name=name, image=False)
 
     file_size_bytes = os.path.getsize(apk_path)
@@ -103,7 +107,7 @@ def get_app_information(apk_data = None,
     df_transposed = df_transposed.drop(df_transposed.index[0])
 
     #在这里对APK进行解析得到各种特征得到多个df(基本信息, 应用权限, 相关url, 类, activity,image)以及apk_path
-    return (df_transposed,details_permissions,df['url'],df['classes'],df.loc[:, ['main_activity','activities']],df['icon']),apk_path
+    return (df_transposed,details_permissions,url,classes,df.loc[:, ['main_activity','activities']],df['icon']),apk_path
 
 
 
@@ -119,8 +123,12 @@ def get_dynamic_analysis_information(file_path):
     protos = data.loc[:,[columns[4],columns[3]]].value_counts()
     #unique data and counts
     contact = data.loc[:, [columns[1], columns[2],columns[4]]].value_counts()
+    datas = [srcs, dsts, protos, contact]
+    for i in range(len(datas)):
+        datas[i] = pd.DataFrame(datas[i]).reset_index()
 
-    return srcs,dsts,protos,contact
+    return datas
 
+get_app_information(apk_path=r"D:\学习资料\反炸APP分析\apk\data\体测圈.apk",rdf=True)
 
 

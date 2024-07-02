@@ -128,7 +128,6 @@ def dynamic_analyzer():
     if st.session_state['capturing'] == 2:
         show_pkts.write(st.session_state['capture_pkts'])  # 显示最终抓包数据
 
-        #IPs = get_IPs()
         IPs = st.session_state['capture_pkts'][st.session_state['capture_pkts'].columns[2]].value_counts()
         st.write(IPs)
 
