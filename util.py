@@ -27,6 +27,10 @@ set_log("ERROR")#set log message only ERROR
 
 APK_SAVE_PATH = r"temp\apk"
 
+tokenizer = BertTokenizer.from_pretrained('tokenizer')
+CHECKPOINT_FILE = 'model/max.pt'
+labels = {'white': 0, 'sex': 1, 'scam': 2, 'gamble': 3, 'black': 4}
+id_to_label = {v: k for k, v in labels.items()}
 
 
 pm = ['android.permission.ACCEPT_HANDOVER', 'android.permission.ACCESS_ADSERVICES_AD_ID',
@@ -800,3 +804,77 @@ def download_apk(method_code=1, url = None, qrcode = None, progress_callback=Non
     else:
         pass
     return check_for_apk()
+
+
+def sliding_window_tokenizer(text, tokenizer, max_length=128, stride=64):
+    encoding = tokenizer(text, return_tensors='pt', truncation=False)
+    input_ids = encoding['input_ids'].squeeze(0)
+    attention_mask = encoding['attention_mask'].squeeze(0)
+
+    token_windows = []
+    for i in range(0, len(input_ids), stride):
+        window_input_ids = input_ids[i:i + max_length]
+        window_attention_mask = attention_mask[i:i + max_length]
+
+        if len(window_input_ids) < max_length:
+            pad_length = max_length - len(window_input_ids)
+            window_input_ids = torch.cat([window_input_ids, torch.zeros(pad_length, dtype=torch.long)])
+            window_attention_mask = torch.cat([window_attention_mask, torch.zeros(pad_length, dtype=torch.long)])
+
+        token_windows.append((window_input_ids, window_attention_mask))
+
+    return token_windows
+
+
+class BertClassifier(nn.Module):
+    def __init__(self, dropout=0.5):
+        super(BertClassifier, self).__init__()
+        self.bert = BertModel.from_pretrained('tokenizer')
+        self.dropout = nn.Dropout(dropout)
+        self.linear = nn.Linear(768, 5)
+
+    def forward(self, input_ids, attention_mask):
+        batch_size, num_windows, seq_len = input_ids.size()
+        input_ids = input_ids.view(-1, seq_len)
+        attention_mask = attention_mask.view(-1, seq_len)
+
+        outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
+        pooled_output = outputs.pooler_output
+        pooled_output = pooled_output.view(batch_size, num_windows, -1).mean(dim=1)
+
+        dropout_output = self.dropout(pooled_output)
+        linear_output = self.linear(dropout_output)
+        return linear_output
+
+
+def load_checkpoint(model):
+    if os.path.exists(CHECKPOINT_FILE):
+        checkpoint = torch.load(CHECKPOINT_FILE)
+        model_state_dict = checkpoint['model_state_dict']
+        if isinstance(model, nn.DataParallel):
+            model.module.load_state_dict(model_state_dict)
+        else:
+            model.load_state_dict(model_state_dict)
+        print(f"Checkpoint loaded.")
+    else:
+        print("No checkpoint found.")
+
+
+class Five_Bert():
+    def __init__(self):
+        self.model = BertClassifier()
+        load_checkpoint(self.model)
+        self.model.eval()
+
+    def predict(self, text):
+        token_windows = sliding_window_tokenizer(text, tokenizer)
+        input_ids_list, attention_mask_list = zip(*token_windows)
+
+        input_ids = torch.stack(input_ids_list).unsqueeze(0)
+        attention_mask = torch.stack(attention_mask_list).unsqueeze(0)
+
+        with torch.no_grad():
+            output = self.model(input_ids, attention_mask)
+            prediction = output.argmax(dim=1).item()
+
+        return id_to_label[prediction]
