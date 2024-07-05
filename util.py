@@ -199,6 +199,19 @@ pm = ['android.permission.ACCEPT_HANDOVER', 'android.permission.ACCESS_ADSERVICE
       'android.permission.sec.ENTERPRISE_DEVICE_ADMIN', 'android.permission.sec.MDM_CERTIFICATE',
       'android.permission.sec.MDM_SECURITY', 'android.permission.status_bar']
 
+remove_words = ['android', 'launcher', 'permission', 'com', 'const', 'interface', 'content', 'forace', 'Activity',
+                'Service', 'Receiver', 'google', 'get', 'CHANGE', 'USE']
+
+def process_string(s):
+    s = re.sub(r'[^a-zA-Z\s]', ' ', s)
+    s = re.sub(r'\s{2,}', ' ', s)
+    words = s.split()
+    words = [word for word in words if word.lower() not in remove_words]
+    return ' '.join(words)
+
+
+def get_first_500_chars(input_string):
+    return input_string[:500]
 
 def check_permissions(input_list):
     result = []
@@ -245,6 +258,7 @@ class my_APK:
         self.apk_path = apk_path
         self.icon_save_path = r"temp\icon"
         self.default_icon_path = r"assets\invalid_image.png"
+
 
     def extract_icon_from_apk(self, icon_path): # -> image_data or None
         with zipfile.ZipFile(self.apk_path, 'r') as zip_ref:
@@ -353,21 +367,30 @@ class my_APK:
     def get_score(self): # -> str 检测结果
         return '?'
 
+    def get_instructions(self):
+        all_instructions_concatenated = ""
 
-    # def get_instructions(self):
-    #     all_instructions_concatenated = ""
-    #     for method in self.dx.get_methods():
-    #         instructions = method.get_instructions()
-    #         if instructions:
-    #             for instruction in instructions:
-    #                 instruction_str = str(instruction)
-    #                 instruction_str_encoded = instruction_str.encode('gbk', errors='ignore').decode('gbk',
-    #                                                                                                 errors='ignore')
-    #                 all_instructions_concatenated += instruction_str_encoded + " "
-    #
-    #     all_instructions_concatenated = re.sub(r'[^a-zA-Z\s]', ' ', all_instructions_concatenated)
-    #
-    #     return all_instructions_concatenated
+        # 假设 self.dx.get_methods() 返回包含 MethodAnalysis 对象的列表
+        methods = self.dx.get_methods()
+
+        for method in methods:
+            # 假设 method.get_basic_blocks() 返回包含 DEXBasicBlock 对象的列表
+            basic_blocks = method.get_basic_blocks()
+
+            for block in basic_blocks:
+                instructions = block.get_instructions()
+
+                if instructions:
+                    for instruction in instructions:
+                        instruction_str = str(instruction)
+                        instruction_str_encoded = instruction_str.encode('gbk', errors='ignore').decode('gbk',
+                                                                                                        errors='ignore')
+                        all_instructions_concatenated += instruction_str_encoded + " "
+
+        # 使用正则表达式替换非字母和空白字符
+        all_instructions_concatenated = re.sub(r'[^a-zA-Z\s]', ' ', all_instructions_concatenated)
+
+        return all_instructions_concatenated
 
     def get_classes(self):
         classes_analysis = self.dx.get_classes()
@@ -418,6 +441,26 @@ class my_APK:
         b = int(self.a.get_androidversion_code())
         a = [b] + a
         return a
+
+    def get_five_info(self):
+        text = ""
+        text += self.get_app_name() + " "
+        text += process_string(str(self.get_permissions())) + " "
+        text += process_string(str(self.get_package())) + " "
+        text += process_string(str(self.get_androidversion_name())) + " "
+        text += process_string(str(self.get_signature_names())) + " "
+        text += process_string(str(self.get_activities())) + " "
+        text += process_string(str(self.get_main_activity())) + " "
+        text += process_string(get_first_500_chars(str(self.get_services()))) + " "
+        text += process_string(get_first_500_chars(str(self.get_receivers()))) + " "
+        text += process_string(get_first_500_chars(str(self.get_providers()))) + " "
+        text += process_string(str(self.get_android_manifest_axml())) + " "
+        text += process_string(get_first_500_chars(str(self.get_instructions()))) + " "
+        text += process_string(get_first_500_chars(str(self.get_classes()))) + " "
+        text += process_string(get_first_500_chars(str(self.get_methods()))) + " "
+        text += process_string(get_first_500_chars(str(self.get_fields())))
+
+        return text
 # list
 
 # name <class 'str'>
