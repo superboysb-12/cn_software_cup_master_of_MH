@@ -81,8 +81,3 @@ class url_check:
         predicted_class = output.argmax(dim=1).item()
         return predicted_class
 
-
-
-
-
-
