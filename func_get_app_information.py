@@ -27,13 +27,11 @@ def get_app_information(apk_data = None,
     scan_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
 
     classes = pd.DataFrame(tool.get_classes())
-    print(type(classes))
-    print(classes)
+
 
     md5 = tool.get_md5()
     url = pd.DataFrame(tool.get_url())
-    print(type(url))
-    print(url)
+
     icon = tool.get_icon(target_path=r'temp\icon', target_name=name, image=False)
 
     file_size_bytes = os.path.getsize(apk_path)
