@@ -129,6 +129,6 @@ def get_dynamic_analysis_information(file_path):
 
     return datas
 
-get_app_information(apk_path=r"D:\学习资料\反炸APP分析\apk\data\体测圈.apk",rdf=True)
+# get_app_information(apk_path=r"D:\学习资料\反炸APP分析\apk\data\体测圈.apk",rdf=True)
 
 

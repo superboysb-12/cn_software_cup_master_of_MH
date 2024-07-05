@@ -17,7 +17,6 @@ from pyzbar.pyzbar import decode
 import os
 # import threading
 import requests
-import datetime
 from bs4 import BeautifulSoup
 from selenium import webdriver
 import numpy as np
