@@ -5,7 +5,25 @@ import zipfile
 from datetime import datetime
 import pandas as pd
 from androguard.util import set_log
+import base64
+from transformers import BertTokenizer, BertModel
+import tldextract
+import sqlite3
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import cv2
+from pyzbar.pyzbar import decode
+import os
+# import threading
+import requests
+from bs4 import BeautifulSoup
+from selenium import webdriver
+import numpy as np
+import streamlit as st
+from urllib.parse import urljoin
 set_log("ERROR")#set log message only ERROR
+
 
 APK_SAVE_PATH = r"temp\apk"
 
@@ -418,3 +436,367 @@ class my_APK:
 # url <class 'list'>
 # md5 <class 'list'>
 # info <class 'list'>
+
+
+#db util
+class namelist:
+    def __init__(self):
+        self.db = sqlite3.connect("allow_deny.db")
+        self.cu=self.db.cursor()
+        self.cu = self.db.cursor()
+        self.cu.execute('''
+        create table if not exists 白名单(
+        ip varchar(30) primary key
+        );
+        '''
+        )
+
+        self.cu.execute('''
+        create table if not exists 白名单(
+        ip varchar(30) primary key
+        );
+        '''
+        )
+
+        self.db.commit()
+
+        self.cu.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        self.tables = self.cu.fetchall()
+        self.tables = [item[0] for item in self.tables]
+
+    def add_list(self,IP, option):
+        if option=='白名单' or option=='黑名单':
+            return -1
+
+        if option not in self.tables:
+            return -1
+        self.cu.execute(f"insert into {option} (ip) values (?)", (IP,))
+        self.db.commit()
+        return 1
+
+    def get_allow_list(self):
+        self.cu.execute("select * from 白名单;")
+        allowlist = pd.DataFrame(self.cu.fetchall(), columns=['ip'])
+        return allowlist
+
+    def get_deny_list(self):
+        self.cu.execute("select * from 黑名单;")
+        denylist = pd.DataFrame(self.cu.fetchall(), columns=['ip'])
+        return denylist
+
+    def show_tables(self):
+        return self.tables
+
+
+
+    def add_tables(self,option):
+        self.cu.execute(f'''
+                create table if not exists {option}(
+                ip varchar(30) primary key
+                );
+                '''
+                        )
+        self.tables+=[option]
+        pass
+
+
+#model util
+class MLP(nn.Module):
+    def __init__(self, input_size):
+        super(MLP, self).__init__()
+        self.layer1 = nn.Linear(input_size, 64)
+        self.layer2 = nn.Linear(64, 32)
+        self.output = nn.Linear(32, 2)  # 二分类任务
+
+    def forward(self, x):
+        x = F.relu(self.layer1(x))
+        x = F.relu(self.layer2(x))
+        x = self.output(x)
+        return x
+
+
+class Predictor:
+    def __init__(self, input_size=366, pth_path="model/mlp_model.pth"):
+        self.model = MLP(input_size)
+        self.checkpoint = torch.load(pth_path)
+        self.model.load_state_dict(self.checkpoint['model_state_dict'])
+        self.scaler = self.checkpoint['scaler']
+        self.model.eval()
+
+    def predict(self, sample):
+        with torch.no_grad():
+            sample = self.scaler.transform([sample])
+            sample = torch.tensor(sample, dtype=torch.float32)
+            output = self.model(sample)
+            predicted_class = torch.argmax(output, dim=1).item()
+            probabilities = F.softmax(output, dim=1)
+            confidence = probabilities[0, predicted_class].item()
+        return predicted_class, confidence
+
+
+#url util
+def get_main_domain(url):
+    ext = tldextract.extract(url)
+    main_domain = ext.registered_domain
+    return main_domain
+
+
+def get_url_id(url):
+    url_bytes = url.encode("utf-8")
+    url_id = base64.urlsafe_b64encode(url_bytes).decode().strip("=")
+    return url_id
+
+def check_url_with_api(url):
+    headers = {
+        "x-apikey": "c0d7ffa4bb65e8b388580fed496e8ae443edb8ebab4e551fe348e9442faa3ce4"
+    }
+
+    url=get_main_domain(url)
+    url_id = get_url_id(url)
+
+    url_report_url = f"https://www.virustotal.com/api/v3/urls/{url_id}"
+    response = requests.get(url_report_url, headers=headers)
+
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
+
+
+
+
+class BertClassifier(nn.Module):
+    def __init__(self, dropout=0.5):
+        super(BertClassifier, self).__init__()
+        self.bert = BertModel.from_pretrained('bert-base-multilingual-cased')
+        self.dropout = nn.Dropout(dropout)
+        self.linear = nn.Linear(768, 5)
+        self.relu = nn.ReLU()
+
+    def forward(self, input_id, mask):
+        _, pooled_output = self.bert(input_ids=input_id, attention_mask=mask, return_dict=False)
+        dropout_output = self.dropout(pooled_output)
+        linear_output = self.linear(dropout_output)
+        final_layer = self.relu(linear_output)
+        return final_layer
+
+
+class url_check:
+    def __init__(self, checkpoint_path='checkpoint_epoch_4.pth'):
+        self.tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-cased')
+        self.model = BertClassifier()
+        self.state_dict = torch.load(checkpoint_path)
+
+        self.state_dict = {k: v for k, v in self.state_dict.items() if k in self.model.state_dict()}
+
+        self.model.load_state_dict(self.state_dict, strict=False)
+
+        self.model.eval()
+
+        use_cuda = torch.cuda.is_available()
+        self.device = torch.device("cuda" if use_cuda else "cpu")
+        if use_cuda:
+            self.model = self.model.cuda()
+
+    def predict(self, text):
+        text=get_main_domain(text)
+        encoding = self.tokenizer(text, padding='max_length', max_length=64, truncation=True, return_tensors="pt")
+        input_ids = encoding['input_ids'].to(self.device)
+        attention_mask = encoding['attention_mask'].to(self.device)
+
+        with torch.no_grad():
+            output = self.model(input_ids, attention_mask)
+
+        predicted_class = output.argmax(dim=1).item()
+        return predicted_class
+
+
+#util download
+curdir = os.getcwd()  # 获取当前路径current work directory
+
+data_dir = os.path.join(curdir, r"temp\data")
+
+def check_url(url,page_url):
+    if not url.startswith('http'):
+        url = page_url + url
+        return url
+# 创建文件夹
+if not os.path.exists(data_dir):
+    os.makedirs(data_dir)
+
+
+def check_for_apk(directory=data_dir):
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file.endswith('.apk'):
+                return 1
+    return -1
+
+
+def get_redirected_url(url, page_url):
+    try:
+        if not url.startswith('http'):
+            url = page_url + url
+        response = requests.head(url, allow_redirects=True)
+        redirected_url = response.url
+        return redirected_url
+    except requests.RequestException as e:
+        print("Error:", e)
+        return None
+
+
+def get_static_links(url):
+    # 发送GET请求获取页面内容
+    response = requests.get(url)
+    # 使用BeautifulSoup解析HTML
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    # 找到所有的<a>标签
+    links = soup.find_all('a')
+    # 提取链接
+    all_links = [link.get('href') for link in links if link.get('href')]
+
+    return all_links
+
+
+def get_dynamic_links(url):
+    # 使用Selenium模拟浏览器行为
+    options = webdriver.ChromeOptions()
+    options.add_argument('headless')  # 无头模式
+    driver = webdriver.Chrome(options=options)
+    driver.get(url)
+
+    # 提取动态加载后的链接
+    dynamic_links = driver.execute_script(
+        'return [].map.call(document.querySelectorAll("a"), function(link) { return link.href; })')
+
+    driver.quit()
+
+    return dynamic_links
+
+
+def get_all_links(url):
+    static_links = get_static_links(url)
+    dynamic_links = get_dynamic_links(url)
+    all_links = static_links + dynamic_links
+    for i in range(len(all_links)):
+        if not all_links[i].startswith('http'):
+            all_links[i] = urljoin(url, all_links[i])
+    apk_links = []
+    for link in all_links:
+        if is_apk_url(link):
+            apk_links.append(link)
+        else:
+            redirected_url = get_redirected_url(link, url)  # 传递page_url参数
+            if redirected_url and is_apk_url(redirected_url):
+                apk_links.append(redirected_url)
+
+    return apk_links
+
+
+def is_apk_url(url):
+    if url.endswith('.apk'):
+        return True
+    else:
+        try:
+            response = requests.head(url)
+            content_type = response.headers.get('Content-Type')
+
+            if content_type == 'application/vnd.android.package-archive':
+                return True
+            else:
+                return False
+        except requests.exceptions.RequestException as e:
+            print(f"Error: {e}")
+            return False
+
+
+def get_qrcode(image_binary):
+    nparr = np.frombuffer(image_binary, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    decoded_objects = decode(img)
+    for obj in decoded_objects:
+        if obj.type == 'QRCODE':
+            return obj.data.decode('GBK')
+    return None
+
+
+def generate_header():
+    current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    header = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1 WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.93 Safari/537.36',
+        'Date': current_time,
+    }
+    return header
+
+
+def sanitize_and_validate_filename(filename):
+    cleaned_filename = filename.split('?')[0]
+    sanitized_filename = "".join(c for c in cleaned_filename if c.isalnum() or c in (' ', '.', '_')).rstrip()
+    if not sanitized_filename.endswith('.apk'):
+        sanitized_filename += '.apk'
+    return sanitized_filename
+
+
+def download_single_apk(apk_url, progress_callback=None):
+    if is_apk_url(apk_url)==False:
+        return -1
+
+
+    save_path = sanitize_and_validate_filename(os.path.basename(apk_url))
+    save_path=os.path.join(data_dir,save_path)
+
+    try:
+        with requests.get(apk_url, headers=generate_header(), allow_redirects=True, timeout=180, stream=True) as r:
+            r.raise_for_status()
+            total_size = int(r.headers.get('content-length', 0))
+            chunk_size = 1024
+            downloaded_size = 0
+
+            with open(save_path, "wb") as hf:
+                for chunk in r.iter_content(chunk_size=chunk_size):
+                    if chunk:
+                        hf.write(chunk)
+                        downloaded_size += len(chunk)
+                        progress = downloaded_size / total_size * 100
+                        st.session_state['progress'] = progress/100
+                        if progress_callback:
+                            progress_callback()
+                        print(f"\r正在下载中: {progress:.2f}%", end="")
+
+        print("\n下载完成！")
+        return 0
+    except Exception as e:
+        print("发生错误,无法下载APK")
+        print(e)
+        return -1
+
+
+    except Exception as e:
+        print("发生错误,无法下载APK")
+        print(e)
+        return -1
+
+
+def download_apk(method_code=1, url = None, qrcode = None, progress_callback=None):
+    if method_code == 1:
+        if is_apk_url(url):
+            download_single_apk(url, progress_callback)
+        else:
+            return -1
+    elif method_code == 2:
+        urls = get_qrcode(qrcode)
+        if is_apk_url(urls):
+            download_single_apk(urls,progress_callback)
+        else:
+            urls_a = get_all_links(urls)
+            for apk_url in urls_a:
+                download_single_apk(apk_url,progress_callback)
+    elif method_code == 3:
+        urls_a = get_all_links(url)
+        for apk_url in urls_a:
+            download_single_apk(apk_url,progress_callback)
+    else:
+        pass
+    return check_for_apk()

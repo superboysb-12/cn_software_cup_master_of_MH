@@ -3,7 +3,7 @@ import time
 import pandas as pd
 from PIL import Image
 from func_get_app_information import get_app_information as static_analyzer_apk
-from utils_download import download_apk
+from util import download_apk
 from GeneratePDF import GeneratePDF
 from dynamic_analysis import PacketCapture
 #streamlit run web.py
