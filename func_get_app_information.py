@@ -2,7 +2,7 @@ from util import my_APK,save_apk
 from datetime import datetime
 import pandas as pd
 import os
-from model_util import Predictor
+from util import Predictor
 
 
 
