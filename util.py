@@ -892,7 +892,10 @@ class BertClassifier5(nn.Module):
 
 def load_checkpoint(model):
     if os.path.exists(CHECKPOINT_FILE):
-        checkpoint = torch.load(CHECKPOINT_FILE)
+        if torch.cuda.is_available():
+            checkpoint = torch.load(CHECKPOINT_FILE)
+        else:
+            checkpoint = torch.load(CHECKPOINT_FILE, map_location=torch.device('cpu'))
         model_state_dict = checkpoint['model_state_dict']
         if isinstance(model, nn.DataParallel):
             model.module.load_state_dict(model_state_dict)
