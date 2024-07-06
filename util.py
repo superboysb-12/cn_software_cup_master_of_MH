@@ -869,9 +869,9 @@ def sliding_window_tokenizer(text, tokenizer, max_length=128, stride=64):
     return token_windows
 
 
-class BertClassifier(nn.Module):
+class BertClassifier5(nn.Module):
     def __init__(self, dropout=0.5):
-        super(BertClassifier, self).__init__()
+        super(BertClassifier5, self).__init__()
         self.bert = BertModel.from_pretrained('tokenizer')
         self.dropout = nn.Dropout(dropout)
         self.linear = nn.Linear(768, 5)
@@ -905,7 +905,7 @@ def load_checkpoint(model):
 
 class Five_Bert():
     def __init__(self):
-        self.model = BertClassifier()
+        self.model = BertClassifier5()
         load_checkpoint(self.model)
         self.model.eval()
 
