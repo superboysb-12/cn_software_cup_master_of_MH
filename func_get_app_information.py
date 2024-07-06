@@ -3,13 +3,12 @@ from datetime import datetime
 import pandas as pd
 import os
 from util import Predictor
+from diskcache import Cache
 
 
 
 def get_app_information(apk_data = None,
                         apk_path : str = 'None' ,
-                        target_path : str = 'None',
-                        rdf : bool = False, #是否要直接返回dataframe而非保存
                         ):
 
     if apk_path == 'None':
@@ -32,7 +31,7 @@ def get_app_information(apk_data = None,
     md5 = tool.get_md5()
     url = pd.DataFrame(tool.get_url())
 
-    icon = tool.get_icon(target_path=r'temp\icon', target_name=name, image=False)
+    icon_path = tool.get_icon(target_path=r'temp\icon', target_name=name, image=False)
 
     file_size_bytes = os.path.getsize(apk_path)
     file_size = round(file_size_bytes/1024/1024,1)
@@ -61,7 +60,7 @@ def get_app_information(apk_data = None,
                'label','confidence', 'signature_name', 'scan_time','details_permissions',
                'version_name', 'version_code', 'min_sdk', 'max_sdk',
                'services','receivers', 'providers', 'permissions',
-               'icon','url','classes','main_activity','activities']
+               'icon_path','url','classes','main_activity','activities']
 
     data = {
         'file_name': [file_name],
@@ -83,7 +82,7 @@ def get_app_information(apk_data = None,
         'receivers': [receivers],
         'providers': [providers],
         'permissions': [permissions],
-        'icon':[icon],
+        'icon_path':[icon_path],
         'url':[url],
         'classes':[classes],
         'details_permissions':[details_permissions]
@@ -91,13 +90,14 @@ def get_app_information(apk_data = None,
 
     df = pd.DataFrame(data)
     df = df[columns]#按columns排序
-    if target_path != 'None':#按分析时间创建csv文件
-        if rdf:
-            return df
-        df.to_csv(target_path + "\\" + ''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ']) + ".csv",
-                  encoding='gbk', index=False)
-        return target_path + "\\" + ''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ']) + ".csv"
 
+
+    return df,apk_path
+    #df.to_csv(target_path + "\\" + ''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ']) + ".csv",
+            #encoding='gbk', index=False)
+    #return target_path + "\\" + ''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ']) + ".csv"
+
+'''
     #返回前端所需数据
     basic = df.loc[:, 'name': 'providers']
     df_transposed = basic.transpose()
@@ -105,8 +105,8 @@ def get_app_information(apk_data = None,
     df_transposed = df_transposed.drop(df_transposed.index[0])
 
     #在这里对APK进行解析得到各种特征得到多个df(基本信息, 应用权限, 相关url, 类, activity,image)以及apk_path
-    return (df_transposed,details_permissions,url,classes,df.loc[:, ['main_activity','activities']],df['icon']),apk_path
-
+    return (df_transposed,details_permissions,url,classes,df.loc[:, ['main_activity','activities']],df['icon_path']),apk_path
+'''
 
 
 
@@ -127,6 +127,6 @@ def get_dynamic_analysis_information(file_path):
 
     return datas
 
-# get_app_information(apk_path=r"D:\学习资料\反炸APP分析\apk\data\体测圈.apk",rdf=True)
+
 
 

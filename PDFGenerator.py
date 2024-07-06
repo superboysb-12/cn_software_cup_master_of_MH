@@ -15,6 +15,7 @@ from reportlab.lib import colors
 from reportlab.lib.colors import HexColor
 from func_get_app_information import get_app_information,get_dynamic_analysis_information
 from datetime import datetime
+from diskcache import Cache
 #下载库之后要添加宋体文件
 
 
@@ -38,16 +39,12 @@ pdfmetrics.registerFont(TTFont(msyhbd, "msyhbd.ttc"))
 #页面大小
 PAGE_HEIGHT = A4[1]
 PAGE_WIDTH = A4[0]
-class GeneratePDF:
+class PDFGenerator():
 
-    def __init__(self,apk_path,d_data_file_path = 'None'):
-        self.apk_path = apk_path
+    def __init__(self,static_information,d_data_file_path):
         self.d_data_file_path = d_data_file_path
-
         # 获取APP信息
-        self.info = get_app_information(apk_path=apk_path, target_path='target_path',
-                                        rdf=True)  # r"D:\学习资料\反炸APP分析\apk\data\20240609144057.csv"
-        # info = pd.read_csv(information_path, encoding="gbk")
+        self.info = static_information
 
         # 获取apk中属于AOSP的权限及描述
         apk_permissions = self.info['details_permissions'][0]
@@ -56,11 +53,11 @@ class GeneratePDF:
         self.permissions_data = [permissions_df.columns.tolist()] + permissions_df.values.tolist()
 
         columns = self.info.columns
-        self.icon_path = self.info['icon'][0]
+        self.icon_path = self.info['icon_path'][0]
         self.info_data = []
         # 处理信息文本
         for column in columns:
-            if column in ['details_permissions', 'icon','classes','url']:
+            if column in ['details_permissions', 'icon_path','classes','url']:
                 continue
             attribute_name = column
             attribute_name = attribute_name.replace('_', ' ')
@@ -187,8 +184,8 @@ class GeneratePDF:
     def generate_report(self,
                         target_path = TARGET_PATH,
                         target_name = TARGET_NAME,
-                        static_result:bool = True,
-                        dynamic_result:bool = True
+                        static_result:bool = False,
+                        dynamic_result:bool = False
                         ):
         # 创建文档
         doc = SimpleDocTemplate(target_path+'\\'+target_name+'.pdf')
@@ -236,6 +233,11 @@ class GeneratePDF:
         Story.append(Spacer(1, 1 * inch))
 
 
+        if dynamic_result == False:
+            doc.build(Story, onFirstPage=self.myFirstPage, onLaterPages=self.myLaterPages)
+            print('PDF successfully saved!')
+            return
+
         # 添加dynamic analysis部分
         Story.append(Paragraph("dynamic analysis", self.titleStyle))
         Story.append(Spacer(1, 0.2 * inch))
@@ -280,13 +282,3 @@ class GeneratePDF:
         # 保存文档
         doc.build(Story, onFirstPage=self.myFirstPage, onLaterPages=self.myLaterPages)
         print('PDF successfully saved!')
-
-
-
-'''
-# 绘制两个横向排布的图像
-d = Drawing()
-d.add(DrawingImage(0, 0, 200, 200, icon_path))
-d.add(DrawingImage(200, 0, 200, 200, icon_path))
-Story.append(d)'''
-

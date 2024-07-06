@@ -6,6 +6,7 @@ from func_get_app_information import get_app_information as static_analyzer_apk
 from util import download_apk
 from GeneratePDF import GeneratePDF
 from dynamic_analysis import PacketCapture
+from AnalysisTool import AnalysisTool
 #streamlit run web.py
 
 st.title('ADS')
@@ -30,6 +31,7 @@ def reset_session_state():
 def static_analyzer(uploaded_file):
     # 初始化 session_state
 
+
     st.header('静态分析模式')
     if st.button('开始分析'):
         if uploaded_file is None:
@@ -39,7 +41,8 @@ def static_analyzer(uploaded_file):
                 original_apk = uploaded_file.getbuffer()
                 with st.spinner('分析中...'):
                     time.sleep(2)
-                    (st.session_state['df1'],st.session_state['df2'],st.session_state['df3'],st.session_state['df4'],st.session_state['df5'],st.session_state['image']),st.session_state['apk_path'] = static_analyzer_apk(original_apk)
+                    st.session_state['AnalysisTool'] = AnalysisTool(original_apk)
+                    (st.session_state['df1'],st.session_state['df2'],st.session_state['df3'],st.session_state['df4'],st.session_state['df5'],st.session_state['image']),st.session_state['apk_path'] = st.session_state['AnalysisTool'].get_static_analysis_information()
                     st.session_state['image']=st.session_state['image'][0]
 
 
@@ -279,8 +282,7 @@ def side_bar():
                     st.info('请勾选至少一项')
                 elif not ((static_result == True and st.session_state['static_completed'] == False) or (dynamic_result == True and st.session_state['dynamic_completed'] == False)):
                     with st.spinner('正在生成'):
-                        tool = GeneratePDF(apk_path=st.session_state['apk_path'])
-                        tool.generate_report()
+                        st.session_state['AnalysisTool'].generate_PDF()
                         #传入可视化包含的结果,生成对应的报告
                         st.session_state['report_completed'] = True
                 else:
