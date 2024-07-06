@@ -616,7 +616,7 @@ def check_url_with_api(url):
 class BertClassifier(nn.Module):
     def __init__(self, dropout=0.5):
         super(BertClassifier, self).__init__()
-        self.bert = BertModel.from_pretrained('bert-base-multilingual-cased')
+        self.bert = BertModel.from_pretrained('tokenizer')
         self.dropout = nn.Dropout(dropout)
         self.linear = nn.Linear(768, 5)
         self.relu = nn.ReLU()
@@ -630,8 +630,8 @@ class BertClassifier(nn.Module):
 
 
 class url_check:
-    def __init__(self, checkpoint_path='checkpoint_epoch_4.pth'):
-        self.tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-cased')
+    def __init__(self, checkpoint_path='model/bert_model.pth'):
+        self.tokenizer = BertTokenizer.from_pretrained('tokenizer')
         self.model = BertClassifier()
         self.state_dict = torch.load(checkpoint_path)
 
