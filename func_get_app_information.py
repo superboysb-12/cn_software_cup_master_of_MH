@@ -42,7 +42,7 @@ def get_app_information(apk_data = None,
     predictor.predict(tool.get_info())
 
     label,confidence =  predictor.predict(tool.get_info())
-
+    five_label = '未识别'
     package_name = tool.get_package()
     version_name = tool.get_androidversion_name()
     version_code = tool.get_androidversion_code()
@@ -60,7 +60,7 @@ def get_app_information(apk_data = None,
     columns = ['file_name', 'name', 'file_size', 'package_name', 'md5',
                'label','confidence', 'signature_name', 'scan_time','details_permissions',
                'version_name', 'version_code', 'min_sdk', 'max_sdk',
-               'services','receivers', 'providers', 'permissions',
+               'services','receivers', 'providers', 'permissions','five_label',
                'icon_path','url','classes','main_activity','activities']
 
     data = {
@@ -86,7 +86,8 @@ def get_app_information(apk_data = None,
         'icon_path':[icon_path],
         'url':[url],
         'classes':[classes],
-        'details_permissions':[details_permissions]
+        'details_permissions':[details_permissions],
+        'five_label':[five_label]
     }
 
     df = pd.DataFrame(data)
