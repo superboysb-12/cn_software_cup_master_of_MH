@@ -9,10 +9,12 @@ class AnalysisTool():
     def __init__(self):
         self.static_analysis_finished = False
         self.dynamic_analysis_finished = False
+        self.five_label = '未识别'
 
     def static_analysis(self,apk_data):
         self.apk_data = apk_data
         self.app_information,self.apk_path,self.five_info = get_app_information(apk_data=apk_data)
+        self.app_information['five_label'] = self.five_label
         self.icon_path = self.app_information['icon_path'][0]
         self.static_analysis_finished = True
 
@@ -45,7 +47,10 @@ class AnalysisTool():
 
     def get_classes(self):
         model = Five_Bert()
-        type = model.predict(self.five_info)
+        self.five_label = model.predict(self.five_info)
+        if self.app_information:
+            self.app_information['five_label'] = self.five_label
+
 
 
 
