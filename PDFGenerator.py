@@ -41,32 +41,9 @@ PAGE_HEIGHT = A4[1]
 PAGE_WIDTH = A4[0]
 class PDFGenerator():
 
-    def __init__(self,static_information,d_data_file_path):
-        self.d_data_file_path = d_data_file_path
-        # 获取APP信息
-        self.info = static_information
-
-        # 获取apk中属于AOSP的权限及描述
-        apk_permissions = self.info['details_permissions'][0]
-        android_permissions = pd.read_csv(ANDROID_PERMISSION_PATH, encoding='gbk')
-        permissions_df = android_permissions[android_permissions['权限标识'].isin(apk_permissions['Name'].tolist())]
-        self.permissions_data = [permissions_df.columns.tolist()] + permissions_df.values.tolist()
-
-        columns = self.info.columns
-        self.icon_path = self.info['icon_path'][0]
-        self.info_data = []
-        # 处理信息文本
-        for column in columns:
-            if column in ['details_permissions', 'icon_path','classes','url']:
-                continue
-            attribute_name = column
-            attribute_name = attribute_name.replace('_', ' ')
-            attribute_name = attribute_name[0].upper() + attribute_name[1:] + ':'
-            temp = str(self.info[column][0])
-            if temp.count(',') >= 1:
-                self.info_data.append([attribute_name, temp.count(',')])
-            else:
-                self.info_data.append([attribute_name, str(self.info[column][0])])
+    def __init__(self):
+        self.dynamic_information_loaded = False
+        self.static_information_loaded = False
 
         # 设置段落格式
         self.titleStyle = ParagraphStyle(
@@ -100,6 +77,37 @@ class PDFGenerator():
                                              ('BACKGROUND', (0, 1), (-1, -1), colors.white),
                                              ('GRID', (0, 0), (-1, -1), 1, colors.black)])
 
+
+    def load_static_information(self,static_information):
+        # 获取APP信息
+        self.info = static_information
+
+        # 获取apk中属于AOSP的权限及描述
+        apk_permissions = self.info['details_permissions'][0]
+        android_permissions = pd.read_csv(ANDROID_PERMISSION_PATH, encoding='gbk')
+        permissions_df = android_permissions[android_permissions['权限标识'].isin(apk_permissions['Name'].tolist())]
+        self.permissions_data = [permissions_df.columns.tolist()] + permissions_df.values.tolist()
+
+        columns = self.info.columns
+        self.icon_path = self.info['icon_path'][0]
+        self.info_data = []
+        # 处理信息文本
+        for column in columns:
+            if column in ['details_permissions', 'icon_path', 'classes', 'url']:
+                continue
+            attribute_name = column
+            attribute_name = attribute_name.replace('_', ' ')
+            attribute_name = attribute_name[0].upper() + attribute_name[1:] + ':'
+            temp = str(self.info[column][0])
+            if temp.count(',') >= 1:
+                self.info_data.append([attribute_name, temp.count(',')])
+            else:
+                self.info_data.append([attribute_name, str(self.info[column][0])])
+        self.static_information_loaded = True
+
+    def load_dynamic_information(self,d_data_file_path):
+        self.dynamic_information = get_dynamic_analysis_information(d_data_file_path)
+        self.dynamic_information_loaded = True
 
     # 绘制用户信息表
     def drawTable(self,c: Canvas, x, y):
@@ -184,8 +192,6 @@ class PDFGenerator():
     def generate_report(self,
                         target_path = TARGET_PATH,
                         target_name = TARGET_NAME,
-                        static_result:bool = False,
-                        dynamic_result:bool = False
                         ):
         # 创建文档
         doc = SimpleDocTemplate(target_path+'\\'+target_name+'.pdf')
@@ -233,7 +239,7 @@ class PDFGenerator():
         Story.append(Spacer(1, 1 * inch))
 
 
-        if dynamic_result == False:
+        if self.dynamic_information_loaded == False:
             doc.build(Story, onFirstPage=self.myFirstPage, onLaterPages=self.myLaterPages)
             print('PDF successfully saved!')
             return
@@ -242,7 +248,7 @@ class PDFGenerator():
         Story.append(Paragraph("dynamic analysis", self.titleStyle))
         Story.append(Spacer(1, 0.2 * inch))
         #srcs,dsts,protos,unique_data
-        datas = get_dynamic_analysis_information(self.d_data_file_path)
+        datas = self.dynamic_information
         for i in range(len(datas)):
             datas[i] = [datas[i].columns.tolist()] + datas[i].values.tolist()
             print(datas[i])
@@ -251,34 +257,6 @@ class PDFGenerator():
             # 添加表格到文档，使用 KeepTogether 来确保表格跨页时整体显示在一页上
             Story.append(table)
             Story.append(Spacer(1, 0.2 * inch))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         # 保存文档
         doc.build(Story, onFirstPage=self.myFirstPage, onLaterPages=self.myLaterPages)
         print('PDF successfully saved!')

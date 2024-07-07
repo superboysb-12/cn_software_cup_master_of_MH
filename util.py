@@ -22,7 +22,7 @@ from selenium import webdriver
 import numpy as np
 import streamlit as st
 from urllib.parse import urljoin
-set_log("ERROR")#set log message only ERROR
+set_log("ERROR")  # set log message only ERROR
 
 
 APK_SAVE_PATH = r"temp\apk"

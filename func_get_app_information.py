@@ -18,6 +18,7 @@ def get_app_information(apk_data = None,
         apk_path = save_apk(apk_data)
 
     tool = my_APK(apk_path)
+    five_info = tool.get_five_info()
 
 
     file_name = apk_path.split('\\')[-1]
@@ -92,7 +93,7 @@ def get_app_information(apk_data = None,
     df = df[columns]#按columns排序
 
 
-    return df,apk_path
+    return df,apk_path,five_info
     #df.to_csv(target_path + "\\" + ''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ']) + ".csv",
             #encoding='gbk', index=False)
     #return target_path + "\\" + ''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ']) + ".csv"

@@ -1,13 +1,23 @@
 from func_get_app_information import  get_app_information,get_dynamic_analysis_information
 from PDFGenerator import  PDFGenerator
+from  util import Five_Bert
 
-d_path = ''
+local_capture_file = "temp\capture.csv"
 
 class AnalysisTool():
-    def __init__(self,apk_data):
+
+    def __init__(self):
+        self.static_analysis_finished = False
+        self.dynamic_analysis_finished = False
+
+    def static_analysis(self,apk_data):
         self.apk_data = apk_data
-        self.app_information,self.apk_path = get_app_information(apk_data=apk_data)
+        self.app_information,self.apk_path,self.five_info = get_app_information(apk_data=apk_data)
         self.icon_path = self.app_information['icon_path'][0]
+        self.static_analysis_finished = True
+
+    def dynamic_analysis(self):
+        self.dynamic_analysis_finished = True
 
     def get_static_analysis_information(self):
         # 返回前端所需数据
@@ -25,9 +35,18 @@ class AnalysisTool():
         return (df_transposed, details_permissions, url, classes, df.loc[:, ['main_activity', 'activities']],
                 df['icon_path']), apk_path
 
-    def generate_PDF(self,static_result:bool = False,dynamic_result:bool = False):
-        generator  = PDFGenerator(self.app_information,d_data_file_path=d_path)
-        generator.generate_report(static_result = static_result,dynamic_result = dynamic_result)
+    def generate_pdf(self,static_result:bool = True,dynamic_result:bool = False):
+        generator  =  PDFGenerator()
+        if(static_result and self.static_analysis_finished):
+            generator.load_static_information(self.app_information)
+        if(dynamic_result and self.dynamic_analysis_finished):
+            generator.load_dynamic_information(local_capture_file)
+        generator.generate_report()
+
+    def get_classes(self):
+        model = Five_Bert()
+        type = model.predict(self.five_info)
+
 
 
 

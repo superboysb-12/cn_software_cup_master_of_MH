@@ -4,12 +4,13 @@ import pandas as pd
 from PIL import Image
 from func_get_app_information import get_app_information as static_analyzer_apk
 from util import download_apk
-from GeneratePDF import GeneratePDF
 from dynamic_analysis import PacketCapture
 from AnalysisTool import AnalysisTool
 #streamlit run web.py
 
 st.title('ADS')
+if 'AnalysisTool' not in st.session_state:
+    st.session_state['AnalysisTool'] = AnalysisTool()
 
 def highlight_dangerous(s):
     return ['background-color: red' if 'dangerous' in v else '' for v in s]
@@ -41,9 +42,10 @@ def static_analyzer(uploaded_file):
                 original_apk = uploaded_file.getbuffer()
                 with st.spinner('分析中...'):
                     time.sleep(2)
-                    st.session_state['AnalysisTool'] = AnalysisTool(original_apk)
+                    st.session_state['AnalysisTool'].static_analysis(original_apk)
                     (st.session_state['df1'],st.session_state['df2'],st.session_state['df3'],st.session_state['df4'],st.session_state['df5'],st.session_state['image']),st.session_state['apk_path'] = st.session_state['AnalysisTool'].get_static_analysis_information()
                     st.session_state['image']=st.session_state['image'][0]
+
 
 
                 st.session_state['static_completed'] = True
@@ -103,6 +105,7 @@ def dynamic_analyzer():
         st.session_state['capture_thread'] = PacketCapture()
 
     if st.button('开始抓包'):
+        st.session_state['AnalysisTool'].dynamic_analysis()
         st.session_state['capturing'] = 1
         if not st.session_state['capture_thread'].is_alive():
             st.session_state['capture_thread'].start()
@@ -280,9 +283,9 @@ def side_bar():
             if st.button('生成结果报告',help = '请勾选报告内容,报告保存在/report中'):
                 if not (static_result or dynamic_result):
                     st.info('请勾选至少一项')
-                elif not ((static_result == True and st.session_state['static_completed'] == False) or (dynamic_result == True and st.session_state['dynamic_completed'] == False)):
+                elif not ((static_result == True and st.session_state['AnalysisTool'].static_analysis_finished == False) or (dynamic_result == True and st.session_state['AnalysisTool'].static_analysis_finished == False)):
                     with st.spinner('正在生成'):
-                        st.session_state['AnalysisTool'].generate_PDF()
+                        st.session_state['AnalysisTool'].generate_pdf(static_result,dynamic_result)
                         #传入可视化包含的结果,生成对应的报告
                         st.session_state['report_completed'] = True
                 else:
