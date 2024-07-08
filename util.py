@@ -517,8 +517,11 @@ class namelist:
 
         if option not in self.tables:
             return -1
-        self.cu.execute(f"insert into {option} (ip) values (?)", (IP,))
-        self.db.commit()
+        try:
+            self.cu.execute(f"insert into {option} (ip) values (?)", (IP,))
+            self.db.commit()
+        except:
+            pass
         return 1
 
     def get_allow_list(self):
@@ -530,6 +533,11 @@ class namelist:
         self.cu.execute("select * from 黑名单;")
         denylist = pd.DataFrame(self.cu.fetchall(), columns=['ip'])
         return denylist
+
+    def get_other_list(self,option):
+        self.cu.execute(f"select * from {option};")
+        list = pd.DataFrame(self.cu.fetchall(), columns=['ip'])
+        return list
 
     def show_tables(self):
         return self.tables
