@@ -493,7 +493,6 @@ class my_APK:
 class namelist:
     def __init__(self):
         self.db = sqlite3.connect("allow_deny.db")
-        self.cu=self.db.cursor()
         self.cu = self.db.cursor()
         self.cu.execute('''
         create table if not exists 白名单(
@@ -503,7 +502,7 @@ class namelist:
         )
 
         self.cu.execute('''
-        create table if not exists 白名单(
+        create table if not exists 黑名单(
         ip varchar(30) primary key
         );
         '''
@@ -516,29 +515,24 @@ class namelist:
         self.tables = [item[0] for item in self.tables]
 
     def add_list(self,IP, option):
-        if option=='白名单' or option=='黑名单':
-            return -1
 
         if option not in self.tables:
             return -1
-        self.cu.execute(f"insert into {option} (ip) values (?)", (IP,))
-        self.db.commit()
+        try:
+            self.cu.execute(f"insert into {option} (ip) values (?)", (IP,))
+            self.db.commit()
+        except:
+            pass
         return 1
 
-    def get_allow_list(self):
-        self.cu.execute("select * from 白名单;")
-        allowlist = pd.DataFrame(self.cu.fetchall(), columns=['ip'])
-        return allowlist
 
-    def get_deny_list(self):
-        self.cu.execute("select * from 黑名单;")
-        denylist = pd.DataFrame(self.cu.fetchall(), columns=['ip'])
-        return denylist
+    def get_list(self,option):
+        self.cu.execute(f"select * from {option};")
+        list = pd.DataFrame(self.cu.fetchall(), columns=['ip'])
+        return list
 
     def show_tables(self):
         return self.tables
-
-
 
     def add_tables(self,option):
         self.cu.execute(f'''
@@ -549,6 +543,15 @@ class namelist:
                         )
         self.tables+=[option]
         pass
+
+    def drop_tables(self, option):
+        self.cu.execute(f'''
+                        DROP TABLE {option}; 
+                        '''
+                        )
+        self.db.commit()
+        self.tables.remove(option)
+
 
 
 #model util
