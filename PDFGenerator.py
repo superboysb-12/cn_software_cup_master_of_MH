@@ -15,6 +15,7 @@ from reportlab.lib import colors
 from reportlab.lib.colors import HexColor
 from func_get_app_information import get_app_information,get_dynamic_analysis_information
 from datetime import datetime
+from util import create_directory_if_not_exists
 from diskcache import Cache
 #下载库之后要添加宋体文件
 
@@ -25,7 +26,7 @@ scan_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
 TARGET_PATH = r'temp\PDF'
 TARGET_NAME = ''.join([c for c in scan_time if c != ':' and c != '-' and c != ' '])
 ANDROID_PERMISSION_PATH = r"assets\permissions.csv"
-
+create_directory_if_not_exists(TARGET_PATH)
 
 
 # 注册字体

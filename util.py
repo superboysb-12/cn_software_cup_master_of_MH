@@ -243,10 +243,13 @@ def append(file_name, *args):
         for content in args:
             file.write(str(content) + "\n")
 
+def create_directory_if_not_exists(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
 def save_apk(apk_data): # -> str save_path
-    current_time = datetime.now()
-    time = current_time.strftime("%Y-%m-%d %H:%M:%S")
-    save_path = APK_SAVE_PATH +'\\'+''.join([c for c in time if c != ':' and c != '-' and c != ' ' ])+r".apk"
+    create_directory_if_not_exists(APK_SAVE_PATH)
+    save_path = APK_SAVE_PATH +'\\'+'temp'+r".apk"
     with open(save_path, "wb") as f:
         f.write(apk_data)
     return save_path
@@ -287,6 +290,7 @@ class my_APK:
         if image:#直接返回图片数据
             return icon_data
         # 将图标数据写入目标文件地址
+        create_directory_if_not_exists(target_path)
         with open(target_path + '\\' + target_name + ".png", "wb") as f:
             f.write(icon_data)
         return target_path + '\\' + target_name + ".png"
