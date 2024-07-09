@@ -243,13 +243,10 @@ def append(file_name, *args):
         for content in args:
             file.write(str(content) + "\n")
 
-def create_directory_if_not_exists(directory):
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
 def save_apk(apk_data): # -> str save_path
-    create_directory_if_not_exists(APK_SAVE_PATH)
-    save_path = APK_SAVE_PATH + '\\' + 'temp' + r".apk"
+    current_time = datetime.now()
+    time = current_time.strftime("%Y-%m-%d %H:%M:%S")
+    save_path = APK_SAVE_PATH +'\\'+''.join([c for c in time if c != ':' and c != '-' and c != ' ' ])+r".apk"
     with open(save_path, "wb") as f:
         f.write(apk_data)
     return save_path
@@ -290,7 +287,6 @@ class my_APK:
         if image:#直接返回图片数据
             return icon_data
         # 将图标数据写入目标文件地址
-        create_directory_if_not_exists(target_path)
         with open(target_path + '\\' + target_name + ".png", "wb") as f:
             f.write(icon_data)
         return target_path + '\\' + target_name + ".png"
@@ -493,7 +489,6 @@ class my_APK:
 class namelist:
     def __init__(self):
         self.db = sqlite3.connect("allow_deny.db")
-        self.cu=self.db.cursor()
         self.cu = self.db.cursor()
         self.cu.execute('''
         create table if not exists 白名单(
@@ -503,7 +498,7 @@ class namelist:
         )
 
         self.cu.execute('''
-        create table if not exists 白名单(
+        create table if not exists 黑名单(
         ip varchar(30) primary key
         );
         '''
@@ -516,29 +511,24 @@ class namelist:
         self.tables = [item[0] for item in self.tables]
 
     def add_list(self,IP, option):
-        if option=='白名单' or option=='黑名单':
-            return -1
 
         if option not in self.tables:
             return -1
-        self.cu.execute(f"insert into {option} (ip) values (?)", (IP,))
-        self.db.commit()
+        try:
+            self.cu.execute(f"insert into {option} (ip) values (?)", (IP,))
+            self.db.commit()
+        except:
+            pass
         return 1
 
-    def get_allow_list(self):
-        self.cu.execute("select * from 白名单;")
-        allowlist = pd.DataFrame(self.cu.fetchall(), columns=['ip'])
-        return allowlist
 
-    def get_deny_list(self):
-        self.cu.execute("select * from 黑名单;")
-        denylist = pd.DataFrame(self.cu.fetchall(), columns=['ip'])
-        return denylist
+    def get_list(self,option):
+        self.cu.execute(f"select * from {option};")
+        list = pd.DataFrame(self.cu.fetchall(), columns=['ip'])
+        return list
 
     def show_tables(self):
         return self.tables
-
-
 
     def add_tables(self,option):
         self.cu.execute(f'''
@@ -549,6 +539,15 @@ class namelist:
                         )
         self.tables+=[option]
         pass
+
+    def drop_tables(self, option):
+        self.cu.execute(f'''
+                        DROP TABLE {option}; 
+                        '''
+                        )
+        self.db.commit()
+        self.tables.remove(option)
+
 
 
 #model util
