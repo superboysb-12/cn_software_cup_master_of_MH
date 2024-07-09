@@ -559,6 +559,15 @@ class namelist:
         pass
 
 
+    def check_ip(self, IP, option):
+        if option not in self.tables:
+            return False
+        self.cu.execute(f"SELECT * FROM {option} WHERE ip = ?", (IP,))
+        result = self.cu.fetchone()
+        return result is not None
+    #如果返回 true就是找到了 False就是没找到
+
+
 #model util
 class MLP(nn.Module):
     def __init__(self, input_size):
