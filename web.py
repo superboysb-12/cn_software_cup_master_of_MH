@@ -42,7 +42,6 @@ def static_analyzer(uploaded_file):
                 original_apk = uploaded_file.getbuffer()
                 with st.spinner('分析中...'):
                     time.sleep(2)
-                    st.session_state['AnalysisTool'].static_analysis(original_apk)
                     (st.session_state['df1'],st.session_state['df2'],st.session_state['df3'],st.session_state['df4'],st.session_state['df5'],st.session_state['image']),st.session_state['apk_path'] = st.session_state['AnalysisTool'].get_static_analysis_information()
                     st.session_state['image']=st.session_state['image'][0]
 
@@ -202,6 +201,7 @@ def side_bar():
         # 文件上传成功
         if uploaded_file is not None:
             st.write("文件上传成功！")
+            st.session_state(['AnalysisTool']).load(uploaded_file)
         else:
             reset_session_state()
         def download():
@@ -283,7 +283,7 @@ def side_bar():
             if st.button('生成结果报告',help = '请勾选报告内容,报告保存在/report中'):
                 if not (static_result or dynamic_result):
                     st.info('请勾选至少一项')
-                elif not ((static_result == True and st.session_state['AnalysisTool'].static_analysis_finished == False) or (dynamic_result == True and st.session_state['AnalysisTool'].static_analysis_finished == False)):
+                elif not ((static_result == True and st.session_state['AnalysisTool'].static_analysis_finished == False) or (dynamic_result == True and st.session_state['AnalysisTool'].dynamic_analysis_finished == False)):
                     with st.spinner('正在生成'):
                         st.session_state['AnalysisTool'].generate_pdf(static_result,dynamic_result)
                         #传入可视化包含的结果,生成对应的报告
