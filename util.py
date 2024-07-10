@@ -524,20 +524,22 @@ class namelist:
     def __init__(self):
         self.db = sqlite3.connect("allow_deny.db")
         self.cu = self.db.cursor()
-        self.cu = self.db.cursor()
         self.cu.execute('''
-        create table if not exists 白名单(
-        ip varchar(30) primary key
-        );
+         create table if not exists 白名单(
+                ip varchar(30) ,
+                url varchar(100),
+                UNIQUE(url, ip)
+                );
         '''
                         )
 
         self.cu.execute('''
         create table if not exists 黑名单(
-        ip varchar(30) primary key
-        );
-        '''
-                        )
+                ip varchar(30) ,
+                url varchar(100),
+                UNIQUE(url, ip)
+                );
+                        ''')
 
         self.db.commit()
 
@@ -545,32 +547,22 @@ class namelist:
         self.tables = self.cu.fetchall()
         self.tables = [item[0] for item in self.tables]
 
-    def add_list(self, IP, option):
+    def add_list(self, IP, url,option):
         if option == '白名单' or option == '黑名单':
             return -1
 
         if option not in self.tables:
             return -1
         try:
-            self.cu.execute(f"insert into {option} (ip) values (?)", (IP,))
+            self.cu.execute(f"insert into {option} (ip) values (?)", (IP,url))
             self.db.commit()
         except:
             pass
         return 1
 
-    def get_allow_list(self):
-        self.cu.execute("select * from 白名单;")
-        allowlist = pd.DataFrame(self.cu.fetchall(), columns=['ip'])
-        return allowlist
-
-    def get_deny_list(self):
-        self.cu.execute("select * from 黑名单;")
-        denylist = pd.DataFrame(self.cu.fetchall(), columns=['ip'])
-        return denylist
-
-    def get_other_list(self, option):
+    def get_list(self, option):
         self.cu.execute(f"select * from {option};")
-        list = pd.DataFrame(self.cu.fetchall(), columns=['ip'])
+        list = pd.DataFrame(self.cu.fetchall(), columns=['ip','url'])
         return list
 
     def show_tables(self):
@@ -579,12 +571,63 @@ class namelist:
     def add_tables(self, option):
         self.cu.execute(f'''
                 create table if not exists {option}(
-                ip varchar(30) primary key
+                ip varchar(30) ,
+                url varchar(100),
+                UNIQUE(url, ip)
                 );
                 '''
                         )
         self.tables += [option]
+        self.db.commit()
         pass
+
+    def drop_tables(self,option):
+        if option not in self.tables:
+            return False
+
+        self.cu.execute(f'''
+                            drop table if exists{option} 
+                            '''
+                        )
+        self.tables.remove(option)
+        self.db.commit()
+        return True
+
+
+
+
+    def search_list(self,option,ip=None,url=None):
+        if ip and url:
+            self.cu.execute(
+                f'''
+                SELECT * FROM {option} WHERE ip = ? and url=?
+                ''', (ip,url)
+            )
+
+
+        if ip and not url:
+            self.cu.execute(
+                f'''
+                SELECT * FROM {option} WHERE ip = ?
+                ''', (ip,)
+            )
+
+        if not ip and url:
+            self.cu.execute(
+                f'''
+                SELECT * FROM {option} WHERE url = ?
+                ''', (url,)
+            )
+
+        result = self.cu.fetchone()
+
+        if result:
+            return True
+        else:
+            return False
+
+
+
 
 
 #model util
