@@ -64,7 +64,7 @@ def static_analyzer(uploaded_file):
             elif data_option == '应用权限':
                 st.dataframe(st.session_state['df2'].style.apply(highlight_dangerous, subset=['Security']))
             elif data_option == '相关URL':
-                st.write(df3)
+                st.dataframe(st.session_state['df3'].style.apply(highlight_dangerous, subset=['Security']))
             elif data_option == 'Class':
                 st.write(df4)
             else:

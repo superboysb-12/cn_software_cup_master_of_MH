@@ -644,7 +644,7 @@ class url_check:
     def __init__(self, checkpoint_path='model/bert_model.pth'):
         self.tokenizer = BertTokenizer.from_pretrained('tokenizer')
         self.model = BertClassifier()
-        self.state_dict = torch.load(checkpoint_path)
+        self.state_dict = torch.load(checkpoint_path,map_location=torch.device('cpu'))
 
         self.state_dict = {k: v for k, v in self.state_dict.items() if k in self.model.state_dict()}
 

@@ -29,7 +29,7 @@ def get_app_information(apk_data = None,
 
 
     md5 = tool.get_md5()
-    url = pd.DataFrame(tool.get_url())
+    url = tool.get_url()
 
     icon_path = tool.get_icon(target_path=r'temp\icon', target_name=name, image=False)
 
@@ -51,9 +51,9 @@ def get_app_information(apk_data = None,
     permissions = tool.get_permissions()
 
     #类型判别信息
-    two_label,url_label,five_label = '','',''
-    two_info,url_info,five_info = '','',''
-    confidence = ''
+    two_label,five_label = '未识别','未识别'
+    two_info,five_info = '',''
+    confidence = '未识别'
     '''
     predictor = Predictor()#涉诈二分类模型
     two_info = tool.get_info()
@@ -102,7 +102,7 @@ def get_app_information(apk_data = None,
     df = df[columns]#按columns排序
 
 
-    return df,apk_path,five_info
+    return df,apk_path,five_info,tool
     #df.to_csv(target_path + "\\" + ''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ']) + ".csv",
             #encoding='gbk', index=False)
     #return target_path + "\\" + ''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ']) + ".csv"

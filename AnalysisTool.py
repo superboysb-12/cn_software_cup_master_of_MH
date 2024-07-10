@@ -1,7 +1,10 @@
+import pandas as pd
+import concurrent.futures
 from func_get_app_information import  get_app_information,get_dynamic_analysis_information
 from PDFGenerator import  PDFGenerator
-from  util import Five_Bert
+from  util import Predictor,url_check,Five_Bert
 import os
+from util import check_url_with_api
 
 local_capture_file = "temp\capture.csv"
 folder_for_downloaded_apk = r"temp\data"
@@ -9,12 +12,15 @@ folder_for_downloaded_apk = r"temp\data"
 class AnalysisTool():
 
     def __init__(self):
+        self.target_apk = None
         self.static_analysis_finished = False
         self.dynamic_analysis_finished = False
         self.two_label = '未识别'
-        self.url_label = '未识别'
+        self.confidence = '未识别'
         self.five_label = '未识别'
-        self.target_apk = None
+        self.tool = None
+        self.url = None
+        self.app_information = None
 
     def load_apk_data(self,original_data):
         self.target_apk = original_data
@@ -23,10 +29,11 @@ class AnalysisTool():
         if self.target_apk is None:
             return
         apk_data = self.target_apk
-        self.app_information,self.apk_path,self.five_info = get_app_information(apk_data=apk_data)
+        self.app_information,self.apk_path,self.five_info,self.tool = get_app_information(apk_data=apk_data)
         self.app_information['five_label'] = self.five_label
         self.icon_path = self.app_information['icon_path'][0]
         self.two_label = self.app_information['two_label']
+        self.url = self.app_information['url'][0]
         self.static_analysis_finished = True
 
     def dynamic_analysis(self):
@@ -36,24 +43,25 @@ class AnalysisTool():
         if self.target_apk is None:
             return
         self.static_analysis()
+        self.classify_url()
+        #self.classify_two_label()
         # 返回前端所需数据
         df = self.app_information
         details_permissions = df['details_permissions'][0]
-        url = df['url'][0]
         classes = df['classes'][0]
         apk_path = self.apk_path
         basic = df.loc[:,
                 ['file_name', 'name', 'file_size', 'package_name', 'md5',
-               'two_label','confidence', 'signature_name', 'scan_time',
+                'signature_name', 'scan_time',
                'version_name', 'version_code', 'min_sdk', 'max_sdk',
-               'services','receivers', 'providers','five_label','main_activity']
+               'services','receivers', 'providers','main_activity']
                 ]
         df_transposed = basic.transpose()
         df_transposed.columns = df_transposed.iloc[0]
         df_transposed = df_transposed.drop(df_transposed.index[0])
 
         # 在这里对APK进行解析得到各种特征得到多个df(基本信息, 应用权限, 相关url, 类, activity,image)以及apk_path
-        return (df_transposed, details_permissions, url, classes, df.loc[:, ['main_activity', 'activities']],
+        return (df_transposed, details_permissions, self.url, classes, df.loc[:, ['main_activity', 'activities']],
                 df['icon_path']), apk_path
 
     def generate_pdf(self,static_result:bool = True,dynamic_result:bool = False):
@@ -65,17 +73,23 @@ class AnalysisTool():
         generator.generate_report()
 
     def classify_five_label(self):
-        model = Five_Bert()
-        self.five_label = model.predict(self.five_info)
-        if self.app_information:
+        model = Five_Bert()  # 五分类模型
+        five_info = self.tool.get_five_info()
+        self.five_label = model.predict(five_info)
+        if self.app_information is not None:
             self.app_information['five_label'] = self.five_label
 
-    def classify_url_label(self):
-        pass
+    def classify_two_label(self):
+        predictor = Predictor()  # 涉诈二分类模型
+        two_info = self.tool.get_info()
+        self.two_label, self.confidence = predictor.predict(two_info)
+        if self.app_information is not None:
+            self.app_information['two_label'] = self.two_label
+            self.app_information['confidence'] = self.confidence
 
 
     def get_label(self):
-        return self.label,self.url_label,self.five_label
+        return self.two_label,self.confidence,self.five_label
 
     def list_downloaded_apks(self):
         self.downloaded_apk_data = [(None,'已上传的APK')]
@@ -102,6 +116,30 @@ class AnalysisTool():
                 self.load_apk_data(data)
                 return
         print('no apk found')
+
+    def classify_url(self):
+        output = []
+        urlClassifier = url_check()
+
+        def process_url(u):
+            api_output = check_url_with_api(u)
+            reputation = api_output['data']['attributes']['reputation'] if api_output else None
+            label = urlClassifier.predict(u)
+
+            reputation_value = int(reputation) if reputation is not None else None
+
+            return [u, 'dangerous' if label else 'normal', int(reputation_value)]
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [executor.submit(process_url, u) for u in self.url]
+
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                output.append(result)
+
+        output_df = pd.DataFrame(output[1:], columns=['url', 'Security', 'Reputation'])
+
+        self.url = output_df
 
 
 
