@@ -2,7 +2,6 @@ import streamlit as st
 import time
 import pandas as pd
 from PIL import Image
-from func_get_app_information import get_app_information as static_analyzer_apk
 from util import download_apk
 from dynamic_analysis import PacketCapture
 from AnalysisTool import AnalysisTool
@@ -35,22 +34,17 @@ def static_analyzer(uploaded_file):
 
     st.header('静态分析模式')
     if st.button('开始分析'):
-        if uploaded_file is None:
+        if st.session_state['AnalysisTool'].target_apk is None:
             st.info('请先上传APK')
         else:
-            try:
-                original_apk = uploaded_file.getbuffer()
-                with st.spinner('分析中...'):
-                    time.sleep(2)
-                    (st.session_state['df1'],st.session_state['df2'],st.session_state['df3'],st.session_state['df4'],st.session_state['df5'],st.session_state['image']),st.session_state['apk_path'] = st.session_state['AnalysisTool'].get_static_analysis_information()
-                    st.session_state['image']=st.session_state['image'][0]
+            with st.spinner('分析中...'):
+                time.sleep(2)
+                (st.session_state['df1'],st.session_state['df2'],st.session_state['df3'],st.session_state['df4'],st.session_state['df5'],st.session_state['image']),st.session_state['apk_path'] = st.session_state['AnalysisTool'].get_static_analysis_information()
+                st.session_state['image']=st.session_state['image'][0]
 
 
 
                 st.session_state['static_completed'] = True
-            except Exception as e:
-                st.session_state['static_completed'] = False
-                st.exception(e)
     if st.session_state['static_completed'] == True:
             st.success('分析完成')
 
@@ -201,9 +195,8 @@ def side_bar():
         # 文件上传成功
         if uploaded_file is not None:
             st.write("文件上传成功！")
-            st.session_state(['AnalysisTool']).load(uploaded_file)
-        else:
-            reset_session_state()
+            st.session_state['AnalysisTool'].load_apk_data(uploaded_file.getbuffer())
+
         def download():
             if 'progress' not in st.session_state:
                 st.session_state['progress'] = 0
@@ -275,6 +268,11 @@ def side_bar():
                 st.error('下载失败')
             else:
                 pass
+
+            chosen_file = st.selectbox("请选择文件",
+                st.session_state['AnalysisTool'].list_downloaded_apks()
+            )
+            st.session_state['AnalysisTool'].select_downloaded_apk(chosen_file)
 
         download()
         def generate_visual_report():

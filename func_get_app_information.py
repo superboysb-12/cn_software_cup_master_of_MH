@@ -3,7 +3,7 @@ from datetime import datetime
 import pandas as pd
 import os
 from util import Predictor
-from diskcache import Cache
+from util import Five_Bert
 
 
 
@@ -18,7 +18,6 @@ def get_app_information(apk_data = None,
         apk_path = save_apk(apk_data)
 
     tool = my_APK(apk_path)
-    five_info = tool.get_five_info()
 
 
     file_name = apk_path.split('\\')[-1]
@@ -38,11 +37,6 @@ def get_app_information(apk_data = None,
     file_size = round(file_size_bytes/1024/1024,1)
     signature_name = tool.get_signature_names()
 
-    predictor = Predictor()
-    predictor.predict(tool.get_info())
-
-    label,confidence =  predictor.predict(tool.get_info())
-    five_label = '未识别'
     package_name = tool.get_package()
     version_name = tool.get_androidversion_name()
     version_code = tool.get_androidversion_code()
@@ -56,9 +50,23 @@ def get_app_information(apk_data = None,
     details_permissions=tool.get_permissions_report()
     permissions = tool.get_permissions()
 
+    #类型判别信息
+    two_label,url_label,five_label = '','',''
+    two_info,url_info,five_info = '','',''
+    confidence = ''
+    '''
+    predictor = Predictor()#涉诈二分类模型
+    two_info = tool.get_info()
+    predictor.predict(two_info)
+    two_label,confidence =  predictor.predict(tool.get_info())
+
+    model = Five_Bert()#五分类模型
+    five_info = tool.get_five_info()
+    five_label = model.predict(five_info)
+    '''
 
     columns = ['file_name', 'name', 'file_size', 'package_name', 'md5',
-               'label','confidence', 'signature_name', 'scan_time','details_permissions',
+               'two_label','confidence', 'signature_name', 'scan_time','details_permissions',
                'version_name', 'version_code', 'min_sdk', 'max_sdk',
                'services','receivers', 'providers', 'permissions','five_label',
                'icon_path','url','classes','main_activity','activities']
@@ -69,7 +77,7 @@ def get_app_information(apk_data = None,
         'name': [name],
         'package_name': [package_name],
         'md5': [md5],
-        'label': [label],
+        'two_label': [two_label],
         'confidence': [confidence],
         'signature_name': [signature_name],
         'main_activity': [main_activity],
