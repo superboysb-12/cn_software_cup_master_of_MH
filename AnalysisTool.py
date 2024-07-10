@@ -12,8 +12,8 @@ class AnalysisTool():
         self.static_analysis_finished = False
         self.dynamic_analysis_finished = False
         self.five_label = '未识别'
-        self.downloaded_apk_data = [(None,'不选择')]
-        self.downloaded_apk_names = ['不选择']
+        self.downloaded_apk_data = []
+        self.downloaded_apk_names = []
         self.target_apk = None
 
     def load_apk_data(self,original_data):
@@ -77,8 +77,6 @@ class AnalysisTool():
         return self.downloaded_apk_names
 
     def select_downloaded_apk(self, name):
-        if name == '不选择':
-            return
         for data, file_name in self.downloaded_apk_data:
             if file_name == name:
                 self.load_apk_data(data)
