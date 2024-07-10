@@ -21,8 +21,9 @@ from selenium import webdriver
 import numpy as np
 import streamlit as st
 from urllib.parse import urljoin
-set_log("ERROR")  # set log message only ERROR
+import socket
 
+set_log("ERROR")  # set log message only ERROR
 
 APK_SAVE_PATH = r"temp\apk"
 
@@ -30,7 +31,6 @@ tokenizer = BertTokenizer.from_pretrained('tokenizer')
 CHECKPOINT_FILE = 'model/max.pt'
 labels = {'white': 0, 'sex': 1, 'scam': 2, 'gamble': 3, 'black': 4}
 id_to_label = {v: k for k, v in labels.items()}
-
 
 pm = ['android.permission.ACCEPT_HANDOVER', 'android.permission.ACCESS_ADSERVICES_AD_ID',
       'android.permission.ACCESS_ADSERVICES_ATTRIBUTION', 'android.permission.ACCESS_ALL_DOWNLOADS',
@@ -201,6 +201,15 @@ pm = ['android.permission.ACCEPT_HANDOVER', 'android.permission.ACCESS_ADSERVICE
 remove_words = ['android', 'launcher', 'permission', 'com', 'const', 'interface', 'content', 'forace', 'Activity',
                 'Service', 'Receiver', 'google', 'get', 'CHANGE', 'USE']
 
+
+def get_ip(url):
+    try:
+        ip_address = socket.gethostbyname(url)
+        return ip_address
+    except:
+        return None
+
+
 def process_string(s):
     s = re.sub(r'[^a-zA-Z\s]', ' ', s)
     s = re.sub(r'\s{2,}', ' ', s)
@@ -211,6 +220,7 @@ def process_string(s):
 
 def get_first_500_chars(input_string):
     return input_string[:500]
+
 
 def check_permissions(input_list):
     result = []
@@ -242,13 +252,15 @@ def append(file_name, *args):
         for content in args:
             file.write(str(content) + "\n")
 
+
 def create_directory_if_not_exists(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-def save_apk(apk_data): # -> str save_path
+
+def save_apk(apk_data):  # -> str save_path
     create_directory_if_not_exists(APK_SAVE_PATH)
-    save_path = APK_SAVE_PATH +'\\'+'temp'+r".apk"
+    save_path = APK_SAVE_PATH + '\\' + 'temp' + r".apk"
     with open(save_path, "wb") as f:
         f.write(apk_data)
     return save_path
@@ -256,13 +268,12 @@ def save_apk(apk_data): # -> str save_path
 
 class my_APK:
     def __init__(self, apk_path):
-        self.a ,self.d,self.dx= AnalyzeAPK(apk_path)
+        self.a, self.d, self.dx = AnalyzeAPK(apk_path)
         self.apk_path = apk_path
         self.icon_save_path = r"temp\icon"
         self.default_icon_path = r"assets\invalid_image.png"
 
-
-    def extract_icon_from_apk(self, icon_path): # -> image_data or None
+    def extract_icon_from_apk(self, icon_path):  # -> image_data or None
         with zipfile.ZipFile(self.apk_path, 'r') as zip_ref:
             # 从 APK 文件中读取图标数据
             with zip_ref.open(icon_path) as icon_file:
@@ -274,19 +285,19 @@ class my_APK:
             else:
                 return icon_data
 
-    def get_icon(self,target_path: str = 'None',
+    def get_icon(self, target_path: str = 'None',
                  target_name: str = 'None',
-                 image: bool = True):# -> str image_path
+                 image: bool = True):  # -> str image_path
 
-        if target_path == 'None':#使用默认的目标地址
+        if target_path == 'None':  #使用默认的目标地址
             target_path = self.icon_save_path
 
         icon_path = self.a.get_app_icon()
         icon_data = self.extract_icon_from_apk(icon_path)
-        if icon_data is None:#无效图片数据,返回默认图片地址
+        if icon_data is None:  #无效图片数据,返回默认图片地址
             return self.default_icon_path
 
-        if image:#直接返回图片数据
+        if image:  #直接返回图片数据
             return icon_data
         # 将图标数据写入目标文件地址
         create_directory_if_not_exists(target_path)
@@ -309,65 +320,76 @@ class my_APK:
         df = df[columns]
         return df
 
-
     def get_app_name(self):
         return self.a.get_app_name()
+
     # str
 
     def get_permissions(self):
         return self.a.get_permissions()
+
     # list
 
-    def get_details_permissions(self): # -> list
+    def get_details_permissions(self):  # -> list
         return self.a.get_details_permissions()
 
     def get_package(self):
         return self.a.get_package()
+
     # str
 
     def get_androidversion_name(self):
         return self.a.get_androidversion_name()
+
     # str
 
     def get_androidversion_code(self):
         return self.a.get_androidversion_code()
+
     # str
 
     def get_signature_names(self):
         return self.a.get_signature_names()
+
     # list
 
     def get_android_manifest_axml(self):
         return self.a.get_android_manifest_axml()
+
     # <class 'androguard.core.axml.AXMLPrinter'>
 
     def get_activities(self):
         return self.a.get_activities()
+
     # list
 
     def get_receivers(self):
         return self.a.get_receivers()
+
     # list
 
     def get_services(self):
         return self.a.get_services()
+
     # list
 
     def get_main_activity(self):
         return self.a.get_main_activity()
+
     # str
 
     def get_providers(self):
         return self.a.get_providers()
+
     # list
 
-    def get_min_sdk_version(self): # -> list
+    def get_min_sdk_version(self):  # -> list
         return self.a.get_min_sdk_version()
 
-    def get_max_sdk_version(self): # -> list
+    def get_max_sdk_version(self):  # -> list
         return self.a.get_max_sdk_version()
 
-    def get_score(self): # -> str 检测结果
+    def get_score(self):  # -> str 检测结果
         return '?'
 
     def get_instructions(self):
@@ -398,20 +420,24 @@ class my_APK:
     def get_classes(self):
         classes_analysis = self.dx.get_classes()
         return classes_analysis
+
     # dict_values
     def get_methods(self):
         methods_generator = self.dx.get_methods()
 
         return list(methods_generator)
+
     # 返回一个list类型
 
     def get_strings(self):
         return self.d[0].get_strings()
+
     # list
     def get_fields(self):
         fields = self.dx.get_fields()
 
         return list(fields)
+
     # list
     def get_cn(self):
         package_name = self.a.get_app_name()
@@ -421,6 +447,7 @@ class my_APK:
         chinese_strings.insert(0, f"{package_name}:")
 
         return chinese_strings
+
     # list
     def get_url(self):
         package_name = self.a.get_app_name()
@@ -429,6 +456,7 @@ class my_APK:
         urls = [s for s in all_strings if url_pattern.match(s)]
         urls.insert(0, f"{package_name}:")
         return urls
+
     # list
     def get_md5(self):
         certs = set(
@@ -438,6 +466,7 @@ class my_APK:
             cert_md5 = hashlib.md5(cert).hexdigest()
             md5_values.append(cert_md5)
         return md5_values
+
     # list
     def get_info(self):
         a = check_permissions(self.a.get_permissions())
@@ -464,6 +493,8 @@ class my_APK:
         text += process_string(get_first_500_chars(str(self.get_fields())))
 
         return text
+
+
 # list
 
 # name <class 'str'>
@@ -492,21 +523,21 @@ class my_APK:
 class namelist:
     def __init__(self):
         self.db = sqlite3.connect("allow_deny.db")
-        self.cu=self.db.cursor()
+        self.cu = self.db.cursor()
         self.cu = self.db.cursor()
         self.cu.execute('''
         create table if not exists 白名单(
         ip varchar(30) primary key
         );
         '''
-        )
+                        )
 
         self.cu.execute('''
-        create table if not exists 白名单(
+        create table if not exists 黑名单(
         ip varchar(30) primary key
         );
         '''
-        )
+                        )
 
         self.db.commit()
 
@@ -514,8 +545,8 @@ class namelist:
         self.tables = self.cu.fetchall()
         self.tables = [item[0] for item in self.tables]
 
-    def add_list(self,IP, option):
-        if option=='白名单' or option=='黑名单':
+    def add_list(self, IP, option):
+        if option == '白名单' or option == '黑名单':
             return -1
 
         if option not in self.tables:
@@ -537,7 +568,7 @@ class namelist:
         denylist = pd.DataFrame(self.cu.fetchall(), columns=['ip'])
         return denylist
 
-    def get_other_list(self,option):
+    def get_other_list(self, option):
         self.cu.execute(f"select * from {option};")
         list = pd.DataFrame(self.cu.fetchall(), columns=['ip'])
         return list
@@ -545,16 +576,14 @@ class namelist:
     def show_tables(self):
         return self.tables
 
-
-
-    def add_tables(self,option):
+    def add_tables(self, option):
         self.cu.execute(f'''
                 create table if not exists {option}(
                 ip varchar(30) primary key
                 );
                 '''
                         )
-        self.tables+=[option]
+        self.tables += [option]
         pass
 
 
@@ -604,12 +633,13 @@ def get_url_id(url):
     url_id = base64.urlsafe_b64encode(url_bytes).decode().strip("=")
     return url_id
 
+
 def check_url_with_api(url):
     headers = {
         "x-apikey": "c0d7ffa4bb65e8b388580fed496e8ae443edb8ebab4e551fe348e9442faa3ce4"
     }
 
-    url=get_main_domain(url)
+    url = get_main_domain(url)
     url_id = get_url_id(url)
 
     url_report_url = f"https://www.virustotal.com/api/v3/urls/{url_id}"
@@ -619,9 +649,6 @@ def check_url_with_api(url):
         return response.json()
     else:
         return None
-
-
-
 
 
 class BertClassifier(nn.Module):
@@ -644,7 +671,11 @@ class url_check:
     def __init__(self, checkpoint_path='model/bert_model.pth'):
         self.tokenizer = BertTokenizer.from_pretrained('tokenizer')
         self.model = BertClassifier()
-        self.state_dict = torch.load(checkpoint_path,map_location=torch.device('cpu'))
+
+        if torch.cuda.is_available():
+            self.state_dict = torch.load(checkpoint_path)
+        else:
+            self.state_dict = torch.load(checkpoint_path, map_location=torch.device('cpu'))
 
         self.state_dict = {k: v for k, v in self.state_dict.items() if k in self.model.state_dict()}
 
@@ -658,7 +689,7 @@ class url_check:
             self.model = self.model.cuda()
 
     def predict(self, text):
-        text=get_main_domain(text)
+        text = get_main_domain(text)
         encoding = self.tokenizer(text, padding='max_length', max_length=64, truncation=True, return_tensors="pt")
         input_ids = encoding['input_ids'].to(self.device)
         attention_mask = encoding['attention_mask'].to(self.device)
@@ -675,10 +706,13 @@ curdir = os.getcwd()  # 获取当前路径current work directory
 
 data_dir = os.path.join(curdir, r"temp\data")
 
-def check_url(url,page_url):
+
+def check_url(url, page_url):
     if not url.startswith('http'):
         url = page_url + url
         return url
+
+
 # 创建文件夹
 if not os.path.exists(data_dir):
     os.makedirs(data_dir)
@@ -798,12 +832,11 @@ def sanitize_and_validate_filename(filename):
 
 
 def download_single_apk(apk_url, progress_callback=None):
-    if is_apk_url(apk_url)==False:
+    if is_apk_url(apk_url) == False:
         return -1
 
-
     save_path = sanitize_and_validate_filename(os.path.basename(apk_url))
-    save_path=os.path.join(data_dir,save_path)
+    save_path = os.path.join(data_dir, save_path)
 
     try:
         with requests.get(apk_url, headers=generate_header(), allow_redirects=True, timeout=180, stream=True) as r:
@@ -818,7 +851,7 @@ def download_single_apk(apk_url, progress_callback=None):
                         hf.write(chunk)
                         downloaded_size += len(chunk)
                         progress = downloaded_size / total_size * 100
-                        st.session_state['progress'] = progress/100
+                        st.session_state['progress'] = progress / 100
                         if progress_callback:
                             progress_callback()
                         print(f"\r正在下载中: {progress:.2f}%", end="")
@@ -837,7 +870,7 @@ def download_single_apk(apk_url, progress_callback=None):
         return -1
 
 
-def download_apk(method_code=1, url = None, qrcode = None, progress_callback=None):
+def download_apk(method_code=1, url=None, qrcode=None, progress_callback=None):
     if method_code == 1:
         if is_apk_url(url):
             download_single_apk(url, progress_callback)
@@ -846,15 +879,15 @@ def download_apk(method_code=1, url = None, qrcode = None, progress_callback=Non
     elif method_code == 2:
         urls = get_qrcode(qrcode)
         if is_apk_url(urls):
-            download_single_apk(urls,progress_callback)
+            download_single_apk(urls, progress_callback)
         else:
             urls_a = get_all_links(urls)
             for apk_url in urls_a:
-                download_single_apk(apk_url,progress_callback)
+                download_single_apk(apk_url, progress_callback)
     elif method_code == 3:
         urls_a = get_all_links(url)
         for apk_url in urls_a:
-            download_single_apk(apk_url,progress_callback)
+            download_single_apk(apk_url, progress_callback)
     else:
         pass
     return check_for_apk()
