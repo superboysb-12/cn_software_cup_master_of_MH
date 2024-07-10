@@ -276,6 +276,11 @@ def side_bar():
             else:
                 pass
 
+            chosen_file = st.selectbox(
+            label = "请选择文件",
+            type=st.session_state['AnalysisTool'].list_downloaded_apks()
+            )
+
         download()
         def generate_visual_report():
             static_result = st.checkbox('静态分析结果',value = True)
