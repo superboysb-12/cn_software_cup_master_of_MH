@@ -38,13 +38,22 @@ def static_analyzer(uploaded_file):
             st.info('请先上传APK')
         else:
             with st.spinner('分析中...'):
-                time.sleep(2)
                 (st.session_state['df1'],st.session_state['df2'],st.session_state['df3'],st.session_state['df4'],st.session_state['df5'],st.session_state['image']),st.session_state['apk_path'] = st.session_state['AnalysisTool'].get_static_analysis_information()
                 st.session_state['image']=st.session_state['image'][0]
 
+            st.session_state['static_analysis'] = True
+            st.session_state['static_completed'] = True
+    if st.button('涉诈识别'):
+        if st.session_state['static_analysis'] == False:
+            st.info('请先完成APK分析')
+        else:
+            st.session_state['AnalysisTool'].classify_two_label()
+            st.success(st.session_state['AnalysisTool'].get_label()[0],"置信度:",st.session_state['AnalysisTool'].get_label()[1])
+    if st.button('APP分类识别'):
+        st.session_state['AnalysisTool'].classify_two_label()
+        st.success(st.session_state['AnalysisTool'].get_label()[2])
 
 
-                st.session_state['static_completed'] = True
     if st.session_state['static_completed'] == True:
             st.success('分析完成')
 
