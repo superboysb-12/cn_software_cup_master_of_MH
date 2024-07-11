@@ -8,6 +8,11 @@ from util import check_url_with_api
 
 local_capture_file = "temp\capture.csv"
 folder_for_downloaded_apk = r"temp\data"
+def convert_to_int(value):
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return value  # 如果无法转换，则返回原值
 
 class AnalysisTool():
 
@@ -138,6 +143,7 @@ class AnalysisTool():
                 output.append(result)
 
         output_df = pd.DataFrame(output[1:], columns=['url', 'Security', 'Reputation'])
+        output_df['Reputation'] = output_df['Reputation'].apply(convert_to_int)
 
         self.url = output_df
 

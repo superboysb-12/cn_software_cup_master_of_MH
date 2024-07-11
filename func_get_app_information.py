@@ -2,6 +2,23 @@ from util import my_APK,save_apk
 from datetime import datetime
 import pandas as pd
 import os
+def get_file_name(apk_path):
+    return apk_path.split('\\')[-1]
+
+def get_scan_time():
+    current_time = datetime.now()
+    scan_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
+    return scan_time
+
+def get_file_size(apk_path):
+    file_size_bytes = os.path.getsize(apk_path)
+    file_size = round(file_size_bytes / 1024 / 1024, 1)
+
+    return str(file_size) + 'MB'
+
+
+
+
 
 def get_app_information(apk_data = None,
                         apk_path : str = 'None' ,
@@ -13,73 +30,63 @@ def get_app_information(apk_data = None,
             return
         apk_path = save_apk(apk_data)
 
+    process = 0
     tool = my_APK(apk_path)
-    file_name = apk_path.split('\\')[-1]
-    name = tool.get_app_name()
-    current_time = datetime.now()
-    scan_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
-    classes = pd.DataFrame(tool.get_classes())
-    md5 = tool.get_md5()
-    url = tool.get_url()
-    icon_path = tool.get_icon(target_path=r'temp\icon', target_name=name, image=False)
-    file_size_bytes = os.path.getsize(apk_path)
-    file_size = round(file_size_bytes/1024/1024,1)
-    signature_name = tool.get_signature_names()
-    package_name = tool.get_package()
-    version_name = tool.get_androidversion_name()
-    version_code = tool.get_androidversion_code()
-    min_sdk = tool.get_min_sdk_version()
-    max_sdk = tool.get_max_sdk_version()
-    main_activity = tool.get_main_activity()
-    activities = tool.get_activities()
-    services = tool.get_services()
-    receivers = tool.get_receivers()
-    providers=tool.get_providers()
-    details_permissions=tool.get_permissions_report()
-    permissions = tool.get_permissions()
 
 
-    #类型判别信息
-    two_label,five_label = '未识别','未识别'
-    two_info,five_info = '',''
-    confidence = '未识别'
+    methods_dict_1 = {
+        'name' : tool.get_app_name,
+        'md5' : tool.get_md5,
+        'url' : tool.get_url,
+        'signature_name' : tool.get_signature_names,
+        'package_name' : tool.get_package,
+        'version_name' : tool.get_androidversion_name,
+        'version_code' : tool.get_androidversion_code,
+        'min_sdk' : tool.get_min_sdk_version,
+        'max_sdk' : tool.get_max_sdk_version,
+        'main_activity' : tool.get_main_activity,
+        'activities' : tool.get_activities,
+        'services' : tool.get_services,
+        'receivers' : tool.get_receivers,
+        'providers' : tool.get_providers,
+        'details_permissions' : tool.get_permissions_report,
+        'permissions' : tool.get_permissions,
+        'scan_time' : get_scan_time,
+        'icon_path' : tool.get_icon,
+    }
+
+    methods_dict_2 ={#args = apk_path
+        'file_name' : get_file_name,
+        'file_size' : get_file_size,
+    }
+
+    data_dict = {
+        'two_label':['未识别'],
+        'confidence': ['未识别'],
+        'five_label' : ['未识别'],
+        'five_info' : [''],
+    }
+
+    for data_name,method in methods_dict_1.items():
+        data_dict[data_name] = [method()]
+
+    for data_name,method in methods_dict_2.items():
+        data_dict[data_name] = [method(apk_path)]
+
+    data_dict['classes'] = [pd.DataFrame(tool.get_classes())]
+
+
 
     columns = ['file_name', 'name', 'file_size', 'package_name', 'md5',
                'two_label','confidence', 'signature_name', 'scan_time','details_permissions',
                'version_name', 'version_code', 'min_sdk', 'max_sdk',
                'services','receivers', 'providers', 'permissions','five_label',
                'icon_path','url','classes','main_activity','activities']
-    data = {
-        'file_name': [file_name],
-        'file_size': [str(file_size)+'MB'],
-        'name': [name],
-        'package_name': [package_name],
-        'md5': [md5],
-        'two_label': [two_label],
-        'confidence': [confidence],
-        'signature_name': [signature_name],
-        'main_activity': [main_activity],
-        'scan_time': [scan_time],
-        'version_name': [version_name],
-        'version_code': [version_code],
-        'min_sdk': [min_sdk],
-        'max_sdk': [max_sdk],
-        'activities': [activities],
-        'services': [services],
-        'receivers': [receivers],
-        'providers': [providers],
-        'permissions': [permissions],
-        'icon_path':[icon_path],
-        'url':[url],
-        'classes':[classes],
-        'details_permissions':[details_permissions],
-        'five_label':[five_label]
-    }
 
-    df = pd.DataFrame(data)
+    df = pd.DataFrame(data_dict)
     df = df[columns]#按columns排序
 
-    return df,apk_path,five_info,tool
+    return df,apk_path,data_dict['five_info'],tool
 
 
 

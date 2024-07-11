@@ -286,8 +286,8 @@ class my_APK:
                 return icon_data
 
     def get_icon(self, target_path: str = 'None',
-                 target_name: str = 'None',
-                 image: bool = True):  # -> str image_path
+                 target_name: str = 'temp',
+                 image: bool = False):  # -> str image_path
 
         if target_path == 'None':  #使用默认的目标地址
             target_path = self.icon_save_path
