@@ -858,7 +858,7 @@ def get_qrcode(image_binary):
 
 
 def generate_header():
-    current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     header = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 6.1 WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.93 Safari/537.36',
         'Date': current_time,

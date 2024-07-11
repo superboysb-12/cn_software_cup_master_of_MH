@@ -128,7 +128,7 @@ class AnalysisTool():
 
             reputation_value = int(reputation) if reputation is not None else None
 
-            return [u, 'dangerous' if label else 'normal', int(reputation_value)]
+            return [u, 'dangerous' if label else 'normal', reputation_value]
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [executor.submit(process_url, u) for u in self.url]

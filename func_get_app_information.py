@@ -2,10 +2,6 @@ from util import my_APK,save_apk
 from datetime import datetime
 import pandas as pd
 import os
-from util import Predictor
-from util import Five_Bert
-
-
 
 def get_app_information(apk_data = None,
                         apk_path : str = 'None' ,
@@ -18,25 +14,17 @@ def get_app_information(apk_data = None,
         apk_path = save_apk(apk_data)
 
     tool = my_APK(apk_path)
-
-
     file_name = apk_path.split('\\')[-1]
     name = tool.get_app_name()
     current_time = datetime.now()
     scan_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
-
     classes = pd.DataFrame(tool.get_classes())
-
-
     md5 = tool.get_md5()
     url = tool.get_url()
-
     icon_path = tool.get_icon(target_path=r'temp\icon', target_name=name, image=False)
-
     file_size_bytes = os.path.getsize(apk_path)
     file_size = round(file_size_bytes/1024/1024,1)
     signature_name = tool.get_signature_names()
-
     package_name = tool.get_package()
     version_name = tool.get_androidversion_name()
     version_code = tool.get_androidversion_code()
@@ -50,27 +38,17 @@ def get_app_information(apk_data = None,
     details_permissions=tool.get_permissions_report()
     permissions = tool.get_permissions()
 
+
     #类型判别信息
     two_label,five_label = '未识别','未识别'
     two_info,five_info = '',''
     confidence = '未识别'
-    '''
-    predictor = Predictor()#涉诈二分类模型
-    two_info = tool.get_info()
-    predictor.predict(two_info)
-    two_label,confidence =  predictor.predict(tool.get_info())
-
-    model = Five_Bert()#五分类模型
-    five_info = tool.get_five_info()
-    five_label = model.predict(five_info)
-    '''
 
     columns = ['file_name', 'name', 'file_size', 'package_name', 'md5',
                'two_label','confidence', 'signature_name', 'scan_time','details_permissions',
                'version_name', 'version_code', 'min_sdk', 'max_sdk',
                'services','receivers', 'providers', 'permissions','five_label',
                'icon_path','url','classes','main_activity','activities']
-
     data = {
         'file_name': [file_name],
         'file_size': [str(file_size)+'MB'],
@@ -101,22 +79,7 @@ def get_app_information(apk_data = None,
     df = pd.DataFrame(data)
     df = df[columns]#按columns排序
 
-
     return df,apk_path,five_info,tool
-    #df.to_csv(target_path + "\\" + ''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ']) + ".csv",
-            #encoding='gbk', index=False)
-    #return target_path + "\\" + ''.join([c for c in scan_time if c != ':' and c != '-' and c != ' ']) + ".csv"
-
-'''
-    #返回前端所需数据
-    basic = df.loc[:, 'name': 'providers']
-    df_transposed = basic.transpose()
-    df_transposed.columns = df_transposed.iloc[0]
-    df_transposed = df_transposed.drop(df_transposed.index[0])
-
-    #在这里对APK进行解析得到各种特征得到多个df(基本信息, 应用权限, 相关url, 类, activity,image)以及apk_path
-    return (df_transposed,details_permissions,url,classes,df.loc[:, ['main_activity','activities']],df['icon_path']),apk_path
-'''
 
 
 
