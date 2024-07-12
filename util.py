@@ -27,7 +27,6 @@ set_log("ERROR")  # set log message only ERROR
 
 APK_SAVE_PATH = r"temp\apk"
 
-tokenizer = BertTokenizer.from_pretrained('tokenizer')
 CHECKPOINT_FILE = 'model/max.pt'
 labels = {'white': 0, 'sex': 1, 'scam': 2, 'gamble': 3, 'black': 4}
 id_to_label = {v: k for k, v in labels.items()}
@@ -955,7 +954,6 @@ def sliding_window_tokenizer(text, tokenizer, max_length=128, stride=64):
 
     return token_windows
 
-
 class BertClassifier5(nn.Module):
     def __init__(self, dropout=0.5):
         super(BertClassifier5, self).__init__()
@@ -976,7 +974,6 @@ class BertClassifier5(nn.Module):
         linear_output = self.linear(dropout_output)
         return linear_output
 
-
 def load_checkpoint(model):
     if os.path.exists(CHECKPOINT_FILE):
         if torch.cuda.is_available():
@@ -988,23 +985,25 @@ def load_checkpoint(model):
             model.module.load_state_dict(model_state_dict)
         else:
             model.load_state_dict(model_state_dict)
-        print(f"Checkpoint loaded.")
+        print("Checkpoint loaded.")
     else:
         print("No checkpoint found.")
-
 
 class Five_Bert():
     def __init__(self):
         self.model = BertClassifier5()
         load_checkpoint(self.model)
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.model.to(self.device)
         self.model.eval()
+        self.tokenizer = BertTokenizer.from_pretrained('tokenizer')
 
     def predict(self, text):
-        token_windows = sliding_window_tokenizer(text, tokenizer)
+        token_windows = sliding_window_tokenizer(text, self.tokenizer)
         input_ids_list, attention_mask_list = zip(*token_windows)
 
-        input_ids = torch.stack(input_ids_list).unsqueeze(0)
-        attention_mask = torch.stack(attention_mask_list).unsqueeze(0)
+        input_ids = torch.stack(input_ids_list).unsqueeze(0).to(self.device)
+        attention_mask = torch.stack(attention_mask_list).unsqueeze(0).to(self.device)
 
         with torch.no_grad():
             output = self.model(input_ids, attention_mask)
