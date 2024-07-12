@@ -30,6 +30,19 @@ def reset_session_state():
 
 def static_analyzer(uploaded_file):
     # 初始化 session_state
+    if 'static_analysis' not in st.session_state:
+        st.session_state['static_analysis'] = False
+
+    if 'static_progress' not in st.session_state or st.session_state['static_progress'] == 1:
+        st.session_state['static_progress'] = []
+
+    static_progress_state = st.empty()
+
+    def static_callback():
+        time.sleep(3)
+        message = ''.join(st.session_state['static_progress'])
+        static_progress_state.write(message)
+        print(message)
 
 
     st.header('静态分析模式')
@@ -38,24 +51,13 @@ def static_analyzer(uploaded_file):
             st.info('请先上传APK')
         else:
             with st.spinner('分析中...'):
-                (st.session_state['df1'],st.session_state['df2'],st.session_state['df3'],st.session_state['df4'],st.session_state['df5'],st.session_state['image']),st.session_state['apk_path'] = st.session_state['AnalysisTool'].get_static_analysis_information()
+                (st.session_state['df1'],st.session_state['df2'],st.session_state['df3'],st.session_state['df4'],st.session_state['df5'],st.session_state['image']),st.session_state['apk_path'] = st.session_state['AnalysisTool'].get_static_analysis_information(static_callback)
                 st.session_state['image']=st.session_state['image'][0]
 
             st.session_state['static_analysis'] = True
             st.session_state['static_completed'] = True
-    if st.button('涉诈识别'):
-        if st.session_state['static_analysis'] == False:
-            st.info('请先完成APK分析')
-        else:
-            st.session_state['AnalysisTool'].classify_two_label()
-            st.success(st.session_state['AnalysisTool'].get_label()[0],"置信度:",st.session_state['AnalysisTool'].get_label()[1])
-    if st.button('APP分类识别'):
-        st.session_state['AnalysisTool'].classify_two_label()
-        st.success(st.session_state['AnalysisTool'].get_label()[2])
 
 
-    if st.session_state['static_completed'] == True:
-            st.success('分析完成')
 
     if st.session_state['static_completed'] == True:
         def data_visualization(df1,df2,df3,df4,df5,image):
@@ -86,6 +88,19 @@ def static_analyzer(uploaded_file):
                            st.session_state['df5'],
                            st.session_state['image'],
                            )
+
+    if st.button('涉诈识别'):
+        if st.session_state['static_analysis'] == False:
+            st.info('请先完成APK分析')
+        else:
+            st.session_state['AnalysisTool'].classify_two_label()
+            st.success(str(st.session_state['AnalysisTool'].get_label()[0]) + "置信度:" + str(st.session_state['AnalysisTool'].get_label()[1]))
+    if st.button('APP分类识别'):
+        if st.session_state['static_analysis'] == False:
+            st.info('请先完成APK分析')
+        else:
+            st.session_state['AnalysisTool'].classify_five_label()
+            st.success(str(st.session_state['AnalysisTool'].get_label()[2]))
 
 
 

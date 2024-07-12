@@ -5,6 +5,7 @@ from PDFGenerator import  PDFGenerator
 from  util import Predictor,url_check,Five_Bert
 import os
 from util import check_url_with_api
+import streamlit as st
 
 local_capture_file = "temp\capture.csv"
 folder_for_downloaded_apk = r"temp\data"
@@ -30,11 +31,11 @@ class AnalysisTool():
     def load_apk_data(self,original_data):
         self.target_apk = original_data
 
-    def static_analysis(self):
+    def static_analysis(self,progress_callback):
         if self.target_apk is None:
             return
         apk_data = self.target_apk
-        self.app_information,self.apk_path,self.five_info,self.tool = get_app_information(apk_data=apk_data)
+        self.app_information,self.apk_path,self.five_info,self.tool = get_app_information(apk_data=apk_data,progress_callback = progress_callback)
         self.app_information['five_label'] = self.five_label
         self.icon_path = self.app_information['icon_path'][0]
         self.two_label = self.app_information['two_label']
@@ -44,10 +45,13 @@ class AnalysisTool():
     def dynamic_analysis(self):
         self.dynamic_analysis_finished = True
 
-    def get_static_analysis_information(self):
+    def get_static_analysis_information(self,progress_callback):
         if self.target_apk is None:
             return
-        self.static_analysis()
+        self.static_analysis(progress_callback)
+        st.session_state['static_progress'].append('\n提取 ' + 'url')
+        if progress_callback:
+            progress_callback()
         self.classify_url()
         #self.classify_two_label()
         # 返回前端所需数据

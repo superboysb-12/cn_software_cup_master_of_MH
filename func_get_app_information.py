@@ -2,6 +2,7 @@ from util import my_APK,save_apk
 from datetime import datetime
 import pandas as pd
 import os
+import streamlit as st
 def get_file_name(apk_path):
     return apk_path.split('\\')[-1]
 
@@ -22,6 +23,7 @@ def get_file_size(apk_path):
 
 def get_app_information(apk_data = None,
                         apk_path : str = 'None' ,
+                        progress_callback = None
                         ):
 
     if apk_path == 'None':
@@ -30,9 +32,10 @@ def get_app_information(apk_data = None,
             return
         apk_path = save_apk(apk_data)
 
-    process = 0
+    st.session_state['static_progress'].append ('初始化分析工具')
+    if progress_callback:
+        progress_callback()
     tool = my_APK(apk_path)
-
 
     methods_dict_1 = {
         'name' : tool.get_app_name,
@@ -68,12 +71,22 @@ def get_app_information(apk_data = None,
     }
 
     for data_name,method in methods_dict_1.items():
+        st.session_state['static_progress'].append( '\n提取 '+data_name)
+        if progress_callback:
+            progress_callback()
         data_dict[data_name] = [method()]
 
     for data_name,method in methods_dict_2.items():
+        st.session_state['static_progress'].append( '\n提取 ' + data_name)
+        if progress_callback:
+            progress_callback()
         data_dict[data_name] = [method(apk_path)]
 
+    st.session_state['static_progress'].append( '\n提取 ' + 'classes')
+    if progress_callback:
+        progress_callback()
     data_dict['classes'] = [pd.DataFrame(tool.get_classes())]
+
 
 
 
