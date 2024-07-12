@@ -23,6 +23,7 @@ import streamlit as st
 from urllib.parse import urljoin
 import socket
 
+
 set_log("ERROR")  # set log message only ERROR
 
 APK_SAVE_PATH = r"temp\apk"
@@ -912,101 +913,90 @@ def download_single_apk(apk_url, progress_callback=None):
         return -1
 
 
-def download_apk(method_code=1, url=None, qrcode=None, progress_callback=None):
-    if method_code == 1:
-        if is_apk_url(url):
-            download_single_apk(url, progress_callback)
-        else:
-            return -1
-    elif method_code == 2:
-        urls = get_qrcode(qrcode)
-        if is_apk_url(urls):
-            download_single_apk(urls, progress_callback)
-        else:
-            urls_a = get_all_links(urls)
-            for apk_url in urls_a:
-                download_single_apk(apk_url, progress_callback)
-    elif method_code == 3:
-        urls_a = get_all_links(url)
-        for apk_url in urls_a:
-            download_single_apk(apk_url, progress_callback)
-    else:
-        pass
-    return check_for_apk()
-
-
 def sliding_window_tokenizer(text, tokenizer, max_length=128, stride=64):
-    encoding = tokenizer(text, return_tensors='pt', truncation=False)
-    input_ids = encoding['input_ids'].squeeze(0)
-    attention_mask = encoding['attention_mask'].squeeze(0)
+    encoding = tokenizer(text, return_tensors='pt', truncation=False)  # 对文本进行编码
+    input_ids = encoding['input_ids'].squeeze(0)  # 获取input_ids并去除批次维度
+    attention_mask = encoding['attention_mask'].squeeze(0)  # 获取attention_mask并去除批次维度
 
-    token_windows = []
-    for i in range(0, len(input_ids), stride):
-        window_input_ids = input_ids[i:i + max_length]
-        window_attention_mask = attention_mask[i:i + max_length]
+    token_windows = []  # 初始化存储token窗口的列表
+    for i in range(0, len(input_ids), stride):  # 按照步长进行滑动窗口
+        window_input_ids = input_ids[i:i + max_length]  # 获取当前窗口的input_ids
+        window_attention_mask = attention_mask[i:i + max_length]  # 获取当前窗口的attention_mask
 
-        if len(window_input_ids) < max_length:
-            pad_length = max_length - len(window_input_ids)
-            window_input_ids = torch.cat([window_input_ids, torch.zeros(pad_length, dtype=torch.long)])
-            window_attention_mask = torch.cat([window_attention_mask, torch.zeros(pad_length, dtype=torch.long)])
+        if len(window_input_ids) < max_length:  # 如果当前窗口的长度小于最大长度
+            pad_length = max_length - len(window_input_ids)  # 计算需要填充的长度
+            window_input_ids = torch.cat([window_input_ids, torch.zeros(pad_length, dtype=torch.long)])  # 填充input_ids
+            window_attention_mask = torch.cat([window_attention_mask, torch.zeros(pad_length, dtype=torch.long)])  # 填充attention_mask
 
-        token_windows.append((window_input_ids, window_attention_mask))
+        token_windows.append((window_input_ids, window_attention_mask))  # 将当前窗口加入列表
 
-    return token_windows
+    return token_windows  # 返回所有的token窗口
 
+# 定义Bert分类器类
 class BertClassifier5(nn.Module):
     def __init__(self, dropout=0.5):
         super(BertClassifier5, self).__init__()
-        self.bert = BertModel.from_pretrained('tokenizer')
-        self.dropout = nn.Dropout(dropout)
-        self.linear = nn.Linear(768, 5)
+        self.bert = BertModel.from_pretrained('tokenizer')  # 加载预训练的BertModel
+        self.dropout = nn.Dropout(dropout)  # 定义dropout层
+        self.linear = nn.Linear(768, 5)  # 定义线性层，输出维度为5
 
     def forward(self, input_ids, attention_mask):
-        batch_size, num_windows, seq_len = input_ids.size()
-        input_ids = input_ids.view(-1, seq_len)
-        attention_mask = attention_mask.view(-1, seq_len)
+        num_windows, seq_len = input_ids.size()  # 获取batch的大小，窗口数量和序列长度
+        input_ids = input_ids.view(-1, seq_len)  # 将input_ids展平
+        attention_mask = attention_mask.view(-1, seq_len)  # 将attention_mask展平
 
-        outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
-        pooled_output = outputs.pooler_output
-        pooled_output = pooled_output.view(batch_size, num_windows, -1).mean(dim=1)
+        outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)  # 获取Bert的输出
+        pooled_output = outputs.pooler_output  # 获取池化输出
+        pooled_output = pooled_output.view(1, num_windows, -1).mean(dim=1)  # 对窗口进行平均池化
 
-        dropout_output = self.dropout(pooled_output)
-        linear_output = self.linear(dropout_output)
-        return linear_output
+        dropout_output = self.dropout(pooled_output)  # 通过dropout层
+        linear_output = self.linear(dropout_output)  # 通过线性层
+        return linear_output  # 返回输出
 
+# 定义加载检查点函数
 def load_checkpoint(model):
-    if os.path.exists(CHECKPOINT_FILE):
+    if os.path.exists(CHECKPOINT_FILE):  # 检查检查点文件是否存在
+        checkpoint = torch.load(CHECKPOINT_FILE, map_location=torch.device('cpu'))  # 加载检查点，使用CPU
         if torch.cuda.is_available():
             checkpoint = torch.load(CHECKPOINT_FILE)
         else:
             checkpoint = torch.load(CHECKPOINT_FILE, map_location=torch.device('cpu'))
-        model_state_dict = checkpoint['model_state_dict']
+        model_state_dict = checkpoint['model_state_dict']  # 获取模型状态字典
         if isinstance(model, nn.DataParallel):
-            model.module.load_state_dict(model_state_dict)
+            model.module.load_state_dict(model_state_dict)  # 加载模型状态字典
         else:
             model.load_state_dict(model_state_dict)
         print("Checkpoint loaded.")
     else:
         print("No checkpoint found.")
 
-class Five_Bert():
+# 定义用于预测的类
+class Five_Bert:
     def __init__(self):
-        self.model = BertClassifier5()
-        load_checkpoint(self.model)
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model.to(self.device)
-        self.model.eval()
+        self.model = BertClassifier5()  # 实例化模型
+        self.use_cuda = torch.cuda.is_available()  # 检查是否可以使用CUDA
+        self.device = torch.device("cuda" if self.use_cuda else "cpu")
+        print(self.device)
+        load_checkpoint(self.model)  # 加载预训练模型
         self.tokenizer = BertTokenizer.from_pretrained('tokenizer')
 
+          # 设置设备为GPU或CPU
+        self.model.to(self.device)  # 将模型移动到设备
+        if self.use_cuda:
+            self.model = nn.DataParallel(self.model).cuda()
+        self.model.eval()
+
     def predict(self, text):
-        token_windows = sliding_window_tokenizer(text, self.tokenizer)
-        input_ids_list, attention_mask_list = zip(*token_windows)
+        token_windows = sliding_window_tokenizer(text, self.tokenizer)  # 对输入文本进行滑动窗口分词
+        input_ids_list, attention_mask_list = zip(*token_windows)  # 解压得到input_ids和attention_mask列表
 
-        input_ids = torch.stack(input_ids_list).unsqueeze(0).to(self.device)
-        attention_mask = torch.stack(attention_mask_list).unsqueeze(0).to(self.device)
+        input_ids = torch.stack(input_ids_list).to(self.device)  # 将input_ids堆叠成张量并移动到设备
+        attention_mask = torch.stack(attention_mask_list).to(self.device)
+        with torch.no_grad():  # 不进行梯度计算
+            output = self.model(input_ids, attention_mask)  # 通过模型获取输出
+            pred = output.argmax(dim=1).item()  # 获取预测结果
 
-        with torch.no_grad():
-            output = self.model(input_ids, attention_mask)
-            prediction = output.argmax(dim=1).item()
+        predicted_label = id_to_label[pred]  # 获取预测标签
+        return predicted_label
 
-        return id_to_label[prediction]
+
