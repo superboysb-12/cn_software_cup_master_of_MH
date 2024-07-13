@@ -10,10 +10,7 @@ import streamlit as st
 local_capture_file = "temp\capture.csv"
 folder_for_downloaded_apk = r"temp\data"
 def convert_to_int(value):
-    try:
-        return int(value)
-    except (ValueError, TypeError):
-        return value  # 如果无法转换，则返回原值
+    return int(value)
 
 class AnalysisTool():
 
@@ -40,6 +37,7 @@ class AnalysisTool():
         self.icon_path = self.app_information['icon_path'][0]
         self.two_label = self.app_information['two_label']
         self.url = self.app_information['url'][0]
+        self.url = self.url[1:]
         self.static_analysis_finished = True
 
     def dynamic_analysis(self):
@@ -77,6 +75,8 @@ class AnalysisTool():
         generator  =  PDFGenerator()
         if(static_result and self.static_analysis_finished):
             generator.load_static_information(self.app_information)
+            if self.url is not None:
+                generator.load_url(self.url)
         if(dynamic_result and self.dynamic_analysis_finished):
             generator.load_dynamic_information(local_capture_file)
         generator.generate_report()
@@ -92,6 +92,8 @@ class AnalysisTool():
         predictor = Predictor()  # 涉诈二分类模型
         two_info = self.tool.get_info()
         self.two_label, self.confidence = predictor.predict(two_info)
+        self.two_label = '涉诈' if self.two_label else '非涉诈'
+        self.confidence = round(self.confidence, 3)
         if self.app_information is not None:
             self.app_information['two_label'] = self.two_label
             self.app_information['confidence'] = self.confidence
@@ -135,7 +137,7 @@ class AnalysisTool():
             reputation = api_output['data']['attributes']['reputation'] if api_output else None
             label = urlClassifier.predict(u)
 
-            reputation_value = int(reputation) if reputation is not None else None
+            reputation_value = int(reputation) if reputation is not None else 0
 
             return [u, 'dangerous' if label else 'normal', reputation_value]
 
@@ -146,7 +148,7 @@ class AnalysisTool():
                 result = future.result()
                 output.append(result)
 
-        output_df = pd.DataFrame(output[1:], columns=['url', 'Security', 'Reputation'])
+        output_df = pd.DataFrame(output, columns=['url', 'Security', 'Reputation'])
         output_df['Reputation'] = output_df['Reputation'].apply(convert_to_int)
 
         self.url = output_df

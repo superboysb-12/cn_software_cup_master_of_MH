@@ -5,7 +5,13 @@ from PIL import Image
 from util import download_apk
 from dynamic_analysis import PacketCapture
 from AnalysisTool import AnalysisTool
+from androguard.util import  set_log
+
 #streamlit run web.py
+
+if "log_set" not in st.session_state:
+    set_log("ERROR")  # set log message only ERROR
+    st.session_state['log_set'] = True
 
 st.title('ADS')
 if 'AnalysisTool' not in st.session_state:
@@ -39,10 +45,8 @@ def static_analyzer(uploaded_file):
     static_progress_state = st.empty()
 
     def static_callback():
-        time.sleep(3)
         message = ''.join(st.session_state['static_progress'])
-        static_progress_state.write(message)
-        print(message)
+        #static_progress_state.write(message)
 
 
     st.header('静态分析模式')
@@ -94,7 +98,7 @@ def static_analyzer(uploaded_file):
             st.info('请先完成APK分析')
         else:
             st.session_state['AnalysisTool'].classify_two_label()
-            st.success(str(st.session_state['AnalysisTool'].get_label()[0]) + "置信度:" + str(st.session_state['AnalysisTool'].get_label()[1]))
+            st.success(str(st.session_state['AnalysisTool'].get_label()[0]) + " 置信度:" + str(st.session_state['AnalysisTool'].get_label()[1]))
     if st.button('APP分类识别'):
         if st.session_state['static_analysis'] == False:
             st.info('请先完成APK分析')

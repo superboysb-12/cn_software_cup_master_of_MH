@@ -45,6 +45,9 @@ class PDFGenerator():
     def __init__(self):
         self.dynamic_information_loaded = False
         self.static_information_loaded = False
+        self.url_loaded = False
+        self.label = '未识别'
+        self.confidence = 1
 
         # 设置段落格式
         self.titleStyle = ParagraphStyle(
@@ -82,6 +85,7 @@ class PDFGenerator():
     def load_static_information(self,static_information):
         # 获取APP信息
         self.info = static_information
+        self.label,self.confidence = self.info['two_label'][0],self.info['confidence'][0]
 
         # 获取apk中属于AOSP的权限及描述
         apk_permissions = self.info['details_permissions'][0]
@@ -110,13 +114,17 @@ class PDFGenerator():
         self.dynamic_information = get_dynamic_analysis_information(d_data_file_path)
         self.dynamic_information_loaded = True
 
+    def load_url(self,url):
+        self.url = url
+        self.url_loaded = True
+
     # 绘制用户信息表
     def drawTable(self,c: Canvas, x, y):
         data = [["File name: ", self.info['file_name'][0]],
                 ['Package name: ',self.info['package_name'][0]],
                 ['Scan date: ',self.info['scan_time'][0]],
-                ['Label: ','?'],
-                ['Grade: ', '?']
+                ['Label: ',self.label],
+                ['Confidence: ', self.confidence]
                 ]
         t = Table(data,colWidths=130,rowHeights=20, style={
             ("FONT", (0, 0), (-1, -1), msyhbd, 8),
@@ -126,9 +134,10 @@ class PDFGenerator():
         t.wrapOn(c, 0, 0)
         t.drawOn(c, x, y)
 
-    def drawScorePie(self,canvas: Canvas, x, y, score,label : str = '?'):
+    def drawScorePie(self,canvas: Canvas, x, y, score,label):
         """绘制评分饼图"""
         d = Drawing(100, 100)
+        score *= 100
         # 画大饼图
         pc = Pie()
         pc.width = 100
@@ -138,10 +147,10 @@ class PDFGenerator():
         pc.slices.strokeWidth = 0.1
         # 设置颜色
         color = colors.seagreen
-        if (score < 60):
+        if (label == '涉诈'):
             color = colors.orangered
-        elif (score < 85):
-            color = colors.orange
+        elif (label == '未识别'):
+            color = colors.black
         pc.slices.strokeColor = colors.transparent
         pc.slices[0].fillColor = color
         pc.slices[1].fillColor = colors.transparent
@@ -154,7 +163,7 @@ class PDFGenerator():
         # 把饼图画到Canvas上
         d.drawOn(canvas, x, y)
         # 写字
-        canvas.setFont(msyh, 30)
+        canvas.setFont(msyh, 25)
         canvas.setFillColor(color)
         canvas.drawCentredString(x + 50, y + 40, label)
 
@@ -179,7 +188,7 @@ class PDFGenerator():
         #c.setFont('simsun',40)
         c.drawCentredString(300, PAGE_HEIGHT-40, "分析报告")
         self.drawTable(c,1*inch,PAGE_HEIGHT-4*inch)#x,y
-        self.drawScorePie(c,PAGE_WIDTH - 2*inch,PAGE_HEIGHT-2*inch,random.randint(1,100))
+        self.drawScorePie(c,PAGE_WIDTH - 2*inch,PAGE_HEIGHT-2*inch,self.confidence,self.label)
         # 绘制页脚
         #DrawPageInfo(c)
         c.restoreState()
@@ -232,12 +241,23 @@ class PDFGenerator():
         # 设置每列的宽度 #font_size = 6
         col_widths = [170, 80,260,50]
         # 创建表格
-        print(self.permissions_data)
         table = Table(self.permissions_data, colWidths=col_widths)
         table.setStyle(self.permissions_style)
         # 添加表格到文档，使用 KeepTogether 来确保表格跨页时整体显示在一页上
         Story.append(table)
         Story.append(Spacer(1, 1 * inch))
+
+        # 添加APK URL部分
+        Story.append(Paragraph("APK URL", self.titleStyle))
+        Story.append(Spacer(1, 0.2 * inch))
+        url = self.url
+        url = [url.columns.tolist()] + url.values.tolist()
+        print(url)
+        table = Table(url)
+        table.setStyle(self.permissions_style)
+        Story.append(table)
+        Story.append(Spacer(1, 1 * inch))
+
 
 
         if self.dynamic_information_loaded == False:
@@ -254,7 +274,7 @@ class PDFGenerator():
             datas[i] = [datas[i].columns.tolist()] + datas[i].values.tolist()
             print(datas[i])
             table = Table(datas[i])
-            #table.setStyle(self.permissions_style)
+            table.setStyle(self.permissions_style)
             # 添加表格到文档，使用 KeepTogether 来确保表格跨页时整体显示在一页上
             Story.append(table)
             Story.append(Spacer(1, 0.2 * inch))

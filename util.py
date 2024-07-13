@@ -4,7 +4,6 @@ from androguard.misc import AnalyzeAPK
 import zipfile
 from datetime import datetime
 import pandas as pd
-from androguard.util import set_log
 import base64
 from transformers import BertTokenizer, BertModel
 import tldextract
@@ -22,9 +21,10 @@ import numpy as np
 import streamlit as st
 from urllib.parse import urljoin
 import socket
+from androguard.util import set_log
 
 
-set_log("ERROR")  # set log message only ERROR
+#set_log("ERROR")  # set log message only ERROR
 
 APK_SAVE_PATH = r"temp\apk"
 
@@ -999,4 +999,24 @@ class Five_Bert:
         predicted_label = id_to_label[pred]  # 获取预测标签
         return predicted_label
 
-
+def download_apk(method_code=1, url=None, qrcode=None, progress_callback=None):
+    if method_code == 1:
+        if is_apk_url(url):
+            download_single_apk(url, progress_callback)
+        else:
+            return -1
+    elif method_code == 2:
+        urls = get_qrcode(qrcode)
+        if is_apk_url(urls):
+            download_single_apk(urls, progress_callback)
+        else:
+            urls_a = get_all_links(urls)
+            for apk_url in urls_a:
+                download_single_apk(apk_url, progress_callback)
+    elif method_code == 3:
+        urls_a = get_all_links(url)
+        for apk_url in urls_a:
+            download_single_apk(apk_url, progress_callback)
+    else:
+        pass
+    return check_for_apk()

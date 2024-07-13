@@ -65,7 +65,7 @@ def get_app_information(apk_data = None,
 
     data_dict = {
         'two_label':['未识别'],
-        'confidence': ['未识别'],
+        'confidence': [1],
         'five_label' : ['未识别'],
         'five_info' : [''],
     }
@@ -91,9 +91,9 @@ def get_app_information(apk_data = None,
 
 
     columns = ['file_name', 'name', 'file_size', 'package_name', 'md5',
-               'two_label','confidence', 'signature_name', 'scan_time','details_permissions',
-               'version_name', 'version_code', 'min_sdk', 'max_sdk',
-               'services','receivers', 'providers', 'permissions','five_label',
+               'two_label','confidence','five_label', 'signature_name', 'scan_time',
+               'details_permissions','version_name', 'version_code', 'min_sdk', 'max_sdk',
+               'services','receivers', 'providers', 'permissions',
                'icon_path','url','classes','main_activity','activities']
 
     df = pd.DataFrame(data_dict)
