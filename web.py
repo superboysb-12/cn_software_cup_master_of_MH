@@ -172,19 +172,19 @@ def adlist():
     list_name = st.text_input('名单名称')
     if st.button('新建名单'):
         list.add_tables(list_name)
+
+
+    IP = st.text_input('IP')
+    URL = st.text_input('URL')
     option = st.selectbox(
         label='黑白名单',
         options=list.show_tables()
     )
-
-    st.write(list.get_list(option))
-
-    IP = st.text_input('IP')
-    URL = st.text_input('URL')
     if st.button('添加至该名单'):
         list.add_list(IP,URL,option)
         st.success('添加成功')
 
+    st.write(list.get_list(option))
 
 
 def side_bar():
