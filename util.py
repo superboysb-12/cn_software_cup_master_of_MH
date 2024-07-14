@@ -570,18 +570,17 @@ class namelist:
         self.tables = self.cu.fetchall()
         self.tables = [item[0] for item in self.tables]
 
-    def add_list(self, IP, url,option):
-        if option == '白名单' or option == '黑名单':
-            return -1
-
+    def add_list(self, IP, url, option):
         if option not in self.tables:
             return -1
+
         try:
-            self.cu.execute(f"insert into {option} (ip) values (?)", (IP,url))
+            self.cu.execute(f"INSERT INTO {option} (ip, url) VALUES (?, ?)", (IP, url))
             self.db.commit()
-        except:
-            pass
-        return 1
+            return 1
+        except Exception as e:
+            print(f"Error inserting data: {e}")
+            return 0
 
     def get_list(self, option):
         self.cu.execute(f"select * from {option};")
