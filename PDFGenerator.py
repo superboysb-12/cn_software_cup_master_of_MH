@@ -32,8 +32,8 @@ create_directory_if_not_exists(TARGET_PATH)
 # 注册字体
 msyh = "msyh"
 msyhbd = "msyhbd"
-song = "simsun"
-pdfmetrics.registerFont(TTFont(song, "simsun.ttc"))
+
+
 pdfmetrics.registerFont(TTFont(msyh, "msyh.ttc"))
 pdfmetrics.registerFont(TTFont(msyhbd, "msyhbd.ttc"))
 
@@ -75,7 +75,6 @@ class PDFGenerator():
         self.permissions_style = TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.white),
                                              ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                                              ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                                             ('FONTNAME', (0, 0), (-1, -1), "simsun"),
                                              ('FONTSIZE', (0, 0), (-1, -1), 6),
                                              ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
                                              ('BACKGROUND', (0, 1), (-1, -1), colors.white),
@@ -174,7 +173,6 @@ class PDFGenerator():
         # 绘制线条
         c.line(30, PAGE_HEIGHT - 790, 570, PAGE_HEIGHT - 790)
         # 绘制页脚文字
-        c.setFont(song, 8)
         c.setFillColor(colors.black)
         c.drawString(30, PAGE_HEIGHT - 810, f"页脚")
 
@@ -185,7 +183,6 @@ class PDFGenerator():
         # 设置字体大小
         c.setFont(msyhbd, 30)
         # 绘制居中标题文本
-        #c.setFont('simsun',40)
         c.drawCentredString(300, PAGE_HEIGHT-40, "分析报告")
         self.drawTable(c,1*inch,PAGE_HEIGHT-4*inch)#x,y
         self.drawScorePie(c,PAGE_WIDTH - 2*inch,PAGE_HEIGHT-2*inch,self.confidence,self.label)
