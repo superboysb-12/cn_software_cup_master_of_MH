@@ -2,7 +2,7 @@ import streamlit as st
 import time
 import pandas as pd
 from PIL import Image
-from util import download_apk
+from util import *
 from dynamic_analysis import PacketCapture
 from AnalysisTool import AnalysisTool
 from androguard.util import  set_log
@@ -168,36 +168,24 @@ def dynamic_analyzer():
 
 
 def adlist():
-    def get_alowlist():
-        data = {
-            'IP': ['224.0.0.251', None, '121.251.251.251', '172.16.1.4'],
-        }
-        df = pd.DataFrame(data)
-        return df
-    def get_denylist():
-        data = {
-            'IP': ['172.16.1.4', None, '172.16.1.4', '121.251.251.251'],
-        }
-        df = pd.DataFrame(data)
-        return df
-
+    list = namelist()
+    list_name = st.text_input('名单名称')
+    if st.button('新建名单'):
+        list.add_tables(list_name)
     option = st.selectbox(
         label='黑白名单',
-        options=['白名单', '黑名单']
+        options=list.show_tables()
     )
 
-    alowlist = get_alowlist()
-    denylist = get_denylist()
+    st.write(list.get_list(option))
 
-    if option == '白名单':
-        st.write(alowlist)
-    else:
-        st.write(denylist)
-
-    IP = st.text_input('添加黑/白名单')
-    if st.button('添加'):
-        #add_list(IP,option)
+    IP = st.text_input('IP')
+    URL = st.text_input('URL')
+    if st.button('添加至该名单'):
+        list.add_list(IP,URL,option)
         st.success('添加成功')
+
+
 
 def side_bar():
     if 'static_completed' not in st.session_state:
