@@ -4,6 +4,7 @@ from androguard.misc import AnalyzeAPK
 import zipfile
 from datetime import datetime
 import pandas as pd
+import io
 import base64
 from transformers import BertTokenizer, BertModel
 import tldextract
@@ -22,6 +23,7 @@ import streamlit as st
 from urllib.parse import urljoin
 import socket
 from androguard.util import set_log
+from PIL import Image
 
 
 #set_log("ERROR")  # set log message only ERROR
@@ -273,6 +275,24 @@ class my_APK:
         self.icon_save_path = r"temp\icon"
         self.default_icon_path = r"assets\invalid_image.png"
 
+    def get_icon_searching(self, target_path = r"temp\icon"):
+        a = self.a
+        file_list = a.get_files()
+        output_dir = target_path
+        icon_path = None
+        for file in file_list:
+            if 'icon' not in file.lower():
+                continue
+            if file.endswith(".png") or file.endswith(".jpg"):
+                file_data = a.get_file(file)
+                image = Image.open(io.BytesIO(file_data))
+                output_file = os.path.join(output_dir, os.path.basename(file))
+                image.save(output_file)
+                icon_path = output_file
+                if 'app_icon' in file.lower():
+                    break
+        return icon_path
+
     def extract_icon_from_apk(self, icon_path):  # -> image_data or None
         with zipfile.ZipFile(self.apk_path, 'r') as zip_ref:
             # 从 APK 文件中读取图标数据
@@ -294,8 +314,11 @@ class my_APK:
 
         icon_path = self.a.get_app_icon()
         icon_data = self.extract_icon_from_apk(icon_path)
-        if icon_data is None:  #无效图片数据,返回默认图片地址
-            return self.default_icon_path
+        if icon_data is None:  #无效图片数据,搜索文件或返回默认图片地址
+            icon_path = self.get_icon_searching()
+            if icon_path is None:
+                return self.default_icon_path
+            return icon_path
 
         if image:  #直接返回图片数据
             return icon_data
