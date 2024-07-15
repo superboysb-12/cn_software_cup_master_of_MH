@@ -22,8 +22,7 @@ import numpy as np
 import streamlit as st
 from urllib.parse import urljoin
 import socket
-from androguard.util import set_log
-from PIL import Image
+
 
 
 #set_log("ERROR")  # set log message only ERROR
@@ -284,11 +283,10 @@ class my_APK:
             if 'icon' not in file.lower():
                 continue
             if file.endswith(".png") or file.endswith(".jpg"):
-                file_data = a.get_file(file)
-                image = Image.open(io.BytesIO(file_data))
-                output_file = os.path.join(output_dir, os.path.basename(file))
-                image.save(output_file)
-                icon_path = output_file
+                icon_data = a.get_file(file)
+                with open(target_path + '\\' + 'temp' + ".png", "wb") as f:
+                    f.write(icon_data)
+                icon_path = target_path + '\\' + 'temp' + ".png"
                 if 'app_icon' in file.lower():
                     break
         return icon_path

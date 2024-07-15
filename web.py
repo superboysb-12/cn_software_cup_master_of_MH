@@ -17,6 +17,9 @@ st.title('ADS')
 if 'AnalysisTool' not in st.session_state:
     st.session_state['AnalysisTool'] = AnalysisTool()
 
+if 'TargetAPK' not in st.session_state:
+    st.session_state['TargetAPK'] = None
+
 def highlight_dangerous(s):
     return ['background-color: red' if 'dangerous' in v else '' for v in s]
 
@@ -42,15 +45,16 @@ def static_analyzer(uploaded_file):
     if 'static_progress' not in st.session_state or st.session_state['static_progress'] == 1:
         st.session_state['static_progress'] = []
 
-    static_progress_state = st.empty()
+    data_container = st.empty()
 
     def static_callback():
-        message = ''.join(st.session_state['static_progress'])
-        #static_progress_state.write(message)
+        message_data = pd.DataFrame(st.session_state['static_progress'],columns=['进度'])
+        data_container.dataframe(message_data)
 
 
     st.header('静态分析模式')
     if st.button('开始分析'):
+        st.session_state['static_progress'] = []
         if st.session_state['AnalysisTool'].target_apk is None:
             st.info('请先上传APK')
         else:
@@ -211,7 +215,11 @@ def side_bar():
         # 文件上传成功
         if uploaded_file is not None:
             st.write("文件上传成功！")
-            st.session_state['AnalysisTool'].load_apk_data(uploaded_file.getbuffer())
+            if st.session_state['TargetAPK'] is not uploaded_file:
+                st.session_state['TargetAPK'] = uploaded_file
+                st.session_state['AnalysisTool'] = AnalysisTool()
+                st.session_state['AnalysisTool'].load_apk_data(uploaded_file.getbuffer())
+
 
         def download():
             if 'progress' not in st.session_state:
@@ -288,7 +296,10 @@ def side_bar():
             chosen_file = st.selectbox("请选择文件",
                 st.session_state['AnalysisTool'].list_downloaded_apks()
             )
-            st.session_state['AnalysisTool'].select_downloaded_apk(chosen_file)
+            if st.session_state['TargetAPK'] is not chosen_file:
+                st.session_state['TargetAPK'] = chosen_file
+                st.session_state['AnalysisTool'] = AnalysisTool()
+                st.session_state['AnalysisTool'].select_downloaded_apk(chosen_file)
 
         download()
         def generate_visual_report():

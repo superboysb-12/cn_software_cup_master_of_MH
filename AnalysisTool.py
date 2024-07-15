@@ -24,6 +24,8 @@ class AnalysisTool():
         self.tool = None
         self.url = None
         self.app_information = None
+        self.check_downloaded_apk()
+        print('Analysis tool initialized')
 
     def load_apk_data(self,original_data):
         self.target_apk = original_data
@@ -102,7 +104,7 @@ class AnalysisTool():
     def get_label(self):
         return self.two_label,self.confidence,self.five_label
 
-    def list_downloaded_apks(self):
+    def check_downloaded_apk(self):
         self.downloaded_apk_data = [(None,'已上传的APK')]
         self.downloaded_apk_names = ['已上传的APK']
 
@@ -117,6 +119,7 @@ class AnalysisTool():
                 except Exception as e:
                     print(f"Error processing file {filename}: {e}")
 
+    def list_downloaded_apks(self):
         return self.downloaded_apk_names
 
     def select_downloaded_apk(self, name):
