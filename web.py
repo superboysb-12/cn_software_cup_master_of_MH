@@ -10,7 +10,10 @@ from androguard.util import  set_log
 #streamlit run web.py
 
 if "log_set" not in st.session_state:
-    set_log("CRITICAL")  # set log message only CRITICAL
+    try:
+        set_log('CRITICAL')# set log message only CRITICAL
+    except Exception as e:
+        pass
     st.session_state['log_set'] = True
 
 st.title('ADS')
