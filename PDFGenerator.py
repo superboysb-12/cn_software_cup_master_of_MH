@@ -30,12 +30,9 @@ create_directory_if_not_exists(TARGET_PATH)
 
 
 # 注册字体
-msyh = "msyh"
-msyhbd = "msyhbd"
+song = "simsun"
+pdfmetrics.registerFont(TTFont(song, r"assets\fonts\simsun.ttc"))
 
-
-pdfmetrics.registerFont(TTFont(msyh, "msyh.ttc"))
-pdfmetrics.registerFont(TTFont(msyhbd, "msyhbd.ttc"))
 
 #页面大小
 PAGE_HEIGHT = A4[1]
@@ -53,7 +50,7 @@ class PDFGenerator():
         self.titleStyle = ParagraphStyle(
             name="titleStyle",
             alignment=1,  # CENTER
-            fontName=msyhbd,
+            fontName=song,
             fontSize=10,
             textColor=colors.black,
             backColor=HexColor(0xF2EEE9),
@@ -65,7 +62,7 @@ class PDFGenerator():
         self.app_name_style = ParagraphStyle(
             name="titleStyle",
             alignment=1,  # CENTER
-            fontName=msyhbd,
+            fontName=song,
             fontSize=10,
             textColor=colors.black,
             borderPadding=(5, 5),
@@ -75,6 +72,7 @@ class PDFGenerator():
         self.permissions_style = TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.white),
                                              ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                                              ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                                             ('FONTNAME', (0, 0), (-1, -1), "simsun"),
                                              ('FONTSIZE', (0, 0), (-1, -1), 6),
                                              ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
                                              ('BACKGROUND', (0, 1), (-1, -1), colors.white),
@@ -126,7 +124,7 @@ class PDFGenerator():
                 ['Confidence: ', self.confidence]
                 ]
         t = Table(data,colWidths=130,rowHeights=20, style={
-            ("FONT", (0, 0), (-1, -1), msyhbd, 8),
+            ("FONT", (0, 0), (-1, -1), song, 8),
             ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
             ('ALIGN', (1, 0), (1, -1), 'LEFT')#对齐方式 LEFT CENTER
         })
@@ -162,7 +160,7 @@ class PDFGenerator():
         # 把饼图画到Canvas上
         d.drawOn(canvas, x, y)
         # 写字
-        canvas.setFont(msyh, 25)
+        canvas.setFont(song, 25)
         canvas.setFillColor(color)
         canvas.drawCentredString(x + 50, y + 40, label)
 
@@ -173,6 +171,7 @@ class PDFGenerator():
         # 绘制线条
         c.line(30, PAGE_HEIGHT - 790, 570, PAGE_HEIGHT - 790)
         # 绘制页脚文字
+        c.setFont(song, 8)
         c.setFillColor(colors.black)
         c.drawString(30, PAGE_HEIGHT - 810, f"页脚")
 
@@ -181,8 +180,9 @@ class PDFGenerator():
         # 设置填充色
         c.setFillColor(colors.orange)
         # 设置字体大小
-        c.setFont(msyhbd, 30)
+        c.setFont(song, 30)
         # 绘制居中标题文本
+        #c.setFont('simsun',40)
         c.drawCentredString(300, PAGE_HEIGHT-40, "分析报告")
         self.drawTable(c,1*inch,PAGE_HEIGHT-4*inch)#x,y
         self.drawScorePie(c,PAGE_WIDTH - 2*inch,PAGE_HEIGHT-2*inch,self.confidence,self.label)
@@ -215,7 +215,7 @@ class PDFGenerator():
         Story.append(Spacer(1, 0.2 * inch))
         t = Table(self.info_data,colWidths=100,rowHeights=15,
                   style={
-            ("FONT", (0, 0), (-1, -1), msyhbd, 7),
+            ("FONT", (0, 0), (-1, -1),song, 7),
             ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
             ('ALIGN', (1, 0), (1, -1), 'LEFT'),#对齐方式 LEFT CENTER
             ("LEFTPADDING", (0, 0), (-1, -1), -100),  # 左边距
