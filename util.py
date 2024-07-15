@@ -689,19 +689,23 @@ def get_url_id(url):
 
 
 def check_url_with_api(url):
-    headers = {
-        "x-apikey": "c0d7ffa4bb65e8b388580fed496e8ae443edb8ebab4e551fe348e9442faa3ce4"
-    }
+    try:
+        headers = {
+            "x-apikey": "c0d7ffa4bb65e8b388580fed496e8ae443edb8ebab4e551fe348e9442faa3ce4"
+        }
 
-    url = get_main_domain(url)
-    url_id = get_url_id(url)
+        url = get_main_domain(url)
+        url_id = get_url_id(url)
 
-    url_report_url = f"https://www.virustotal.com/api/v3/urls/{url_id}"
-    response = requests.get(url_report_url, headers=headers)
+        url_report_url = f"https://www.virustotal.com/api/v3/urls/{url_id}"
+        response = requests.get(url_report_url, headers=headers)
 
-    if response.status_code == 200:
-        return response.json()
-    else:
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return None
+    except Exception  as e:
+        print(e)
         return None
 
 
