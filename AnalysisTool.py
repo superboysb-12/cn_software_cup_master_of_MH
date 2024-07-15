@@ -25,9 +25,12 @@ class AnalysisTool():
         self.url = None
         self.app_information = None
         self.check_downloaded_apk()
+        self.file_name = 'None'
         print('Analysis tool initialized')
 
     def load_apk_data(self,original_data):
+        if self.target_apk != original_data:
+            self.__init__()
         self.target_apk = original_data
 
     def static_analysis(self,progress_callback):
@@ -40,7 +43,9 @@ class AnalysisTool():
         self.two_label = self.app_information['two_label']
         self.url = self.app_information['url'][0]
         self.url = self.url[1:]
+        self.app_information['file_name'] = self.file_name
         self.static_analysis_finished = True
+
 
     def dynamic_analysis(self):
         self.dynamic_analysis_finished = True
@@ -127,6 +132,7 @@ class AnalysisTool():
             return
         for data, file_name in self.downloaded_apk_data:
             if file_name == name:
+                self.file_name = name + '.apk'
                 self.load_apk_data(data)
                 return
         print('no apk found')
