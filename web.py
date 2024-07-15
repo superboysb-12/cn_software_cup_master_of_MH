@@ -10,7 +10,7 @@ from androguard.util import  set_log
 #streamlit run web.py
 
 if "log_set" not in st.session_state:
-    set_log("ERROR")  # set log message only ERROR
+    set_log("CRITICAL")  # set log message only CRITICAL
     st.session_state['log_set'] = True
 
 st.title('ADS')
@@ -19,6 +19,8 @@ if 'AnalysisTool' not in st.session_state:
 
 if 'TargetAPK' not in st.session_state:
     st.session_state['TargetAPK'] = None
+if 'file_name' not in st.session_state:
+    st.session_state['file_name'] = 'None'
 
 def highlight_dangerous(s):
     return ['background-color: red' if 'dangerous' in v else '' for v in s]
@@ -215,10 +217,8 @@ def side_bar():
         # 文件上传成功
         if uploaded_file is not None:
             st.write("文件上传成功！")
-            if st.session_state['TargetAPK'] is not uploaded_file:
-                st.session_state['TargetAPK'] = uploaded_file
-                st.session_state['AnalysisTool'] = AnalysisTool()
-                st.session_state['AnalysisTool'].load_apk_data(uploaded_file.getbuffer())
+            st.session_state['uploaded_file'] = uploaded_file
+            st.session_state['file_name'] = uploaded_file.name
 
 
         def download():
@@ -296,10 +296,15 @@ def side_bar():
             chosen_file = st.selectbox("请选择文件",
                 st.session_state['AnalysisTool'].list_downloaded_apks()
             )
-            if st.session_state['TargetAPK'] is not chosen_file:
-                st.session_state['TargetAPK'] = chosen_file
+            st.session_state['AnalysisTool'].select_downloaded_apk(chosen_file)
+            if chosen_file != '已上传的APK':
+                st.session_state['AnalysisTool'].file_name = chosen_file+'.apk'
+            else:
+                uploaded_file = st.session_state['uploaded_file']
                 st.session_state['AnalysisTool'] = AnalysisTool()
-                st.session_state['AnalysisTool'].select_downloaded_apk(chosen_file)
+                st.session_state['AnalysisTool'].load_apk_data(uploaded_file.getbuffer())
+                st.session_state['AnalysisTool'].file_name = st.session_state['file_name']
+
 
         download()
         def generate_visual_report():

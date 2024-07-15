@@ -16,9 +16,10 @@ from reportlab.lib.colors import HexColor
 from func_get_app_information import get_app_information,get_dynamic_analysis_information
 from datetime import datetime
 from util import create_directory_if_not_exists
-from diskcache import Cache
 #下载库之后要添加宋体文件
-
+image_path = r"C:\Users\杨子帆\Pictures\Saved Pictures\shield.png" # 图标的路径，这里假设是当前目录下的 icon.png
+icon_width = 10
+icon_height = 10
 
 
 current_time = datetime.now()
@@ -153,7 +154,7 @@ class PDFGenerator():
         pc.slices[1].fillColor = colors.transparent
         d.add(pc)
         # 画内圈
-        circle = Circle(50, 50, 40)
+        circle = Circle(50, 50, 45)
         circle.fillColor = colors.white
         circle.strokeColor = colors.transparent
         d.add(circle)
@@ -178,9 +179,9 @@ class PDFGenerator():
     def myFirstPage(self,c: Canvas, doc):
         c.saveState()
         # 设置填充色
-        c.setFillColor(colors.orange)
+        c.setFillColor(colors.black)
         # 设置字体大小
-        c.setFont(song, 30)
+        c.setFont(song,30)
         # 绘制居中标题文本
         #c.setFont('simsun',40)
         c.drawCentredString(300, PAGE_HEIGHT-40, "分析报告")
@@ -196,6 +197,11 @@ class PDFGenerator():
         #DrawPageInfo(c)
         c.restoreState()
 
+    def add_title_with_icon(self,Story,title,icon_path):
+        title_with_icon = Paragraph(
+            f'<img src="{icon_path}" width="{icon_width}" height="{icon_height}"/> {title}', self.titleStyle)
+        Story.append(title_with_icon)
+
     def generate_report(self,
                         target_path = TARGET_PATH,
                         target_name = TARGET_NAME,
@@ -208,10 +214,12 @@ class PDFGenerator():
         Story.append(Image(self.icon_path, 0.5 * inch, 0.5 * inch))
         Story.append(Paragraph('——', self.app_name_style))
         Story.append(Paragraph(self.info['name'][0], self.app_name_style))
-        Story.append(Spacer(1, 4 * inch))
+        Story.append(Spacer(1, 3 * inch))
 
         #添加APK INFORMATION部分
-        Story.append(Paragraph("APP INFORMATION", self.titleStyle))
+        title_text = 'APP INFORMATION'
+        title_with_icon = Paragraph(f'<img src="{image_path}" width="{icon_width}" height="{icon_height}"/> {title_text}', self.titleStyle)
+        Story.append(title_with_icon)
         Story.append(Spacer(1, 0.2 * inch))
         t = Table(self.info_data,colWidths=100,rowHeights=15,
                   style={
@@ -224,34 +232,45 @@ class PDFGenerator():
         Story.append(Spacer(1, 1 * inch))
 
         #添加APK PERMISSIONS部分
-        Story.append(Paragraph("APK PERMISSIONS", self.titleStyle))
+        self.add_title_with_icon(Story,"APK PERMISSIONS",image_path)
+        #Story.append(Paragraph("APK PERMISSIONS", self.titleStyle))
         Story.append(Spacer(1, 0.2 * inch))
-
+        permissions_style = self.permissions_style
         # 根据单元格文本设置特定单元格的样式
         for row in range(1, len(self.permissions_data)):
             for col in range(len(self.permissions_data[row])):
                 if 'dangerous' in self.permissions_data[row][col]:
-                    self.permissions_style.add('TEXTCOLOR', (col, row), (col, row), colors.red)
+                    permissions_style.add('TEXTCOLOR', (col, row), (col, row), colors.red)
                 if 'normal' in self.permissions_data[row][col]:
-                    self.permissions_style.add('TEXTCOLOR', (col, row), (col, row), colors.green)
+                    permissions_style.add('TEXTCOLOR', (col, row), (col, row), colors.green)
         # 创建表格对象，并应用样式
         # 设置每列的宽度 #font_size = 6
         col_widths = [170, 80,260,50]
         # 创建表格
         table = Table(self.permissions_data, colWidths=col_widths)
-        table.setStyle(self.permissions_style)
+        table.setStyle(permissions_style)
         # 添加表格到文档，使用 KeepTogether 来确保表格跨页时整体显示在一页上
         Story.append(table)
         Story.append(Spacer(1, 1 * inch))
 
         # 添加APK URL部分
-        Story.append(Paragraph("APK URL", self.titleStyle))
+        self.add_title_with_icon(Story, "APK URL", image_path)
         Story.append(Spacer(1, 0.2 * inch))
         url = self.url
         url = [url.columns.tolist()] + url.values.tolist()
         print(url)
         table = Table(url)
-        table.setStyle(self.permissions_style)
+        url_style = self.permissions_style
+        # 根据单元格文本设置特定单元格的样式 高亮危险
+        for row in range(1, len(url)):
+            for col in range(1,len(url[row]) - 1):
+                if 'dangerous' in url[row][col]:
+                    url_style.add('TEXTCOLOR', (col, row), (col, row), colors.red)
+                if 'normal' in url[row][col]:
+                    url_style.add('TEXTCOLOR', (col, row), (col, row), colors.green)
+
+
+        table.setStyle(url_style)
         Story.append(table)
         Story.append(Spacer(1, 1 * inch))
 
@@ -263,7 +282,7 @@ class PDFGenerator():
             return
 
         # 添加dynamic analysis部分
-        Story.append(Paragraph("dynamic analysis", self.titleStyle))
+        self.add_title_with_icon(Story, "DYNAMIC ANALYSIS", image_path)
         Story.append(Spacer(1, 0.2 * inch))
         #srcs,dsts,protos,unique_data
         datas = self.dynamic_information
@@ -271,7 +290,8 @@ class PDFGenerator():
             datas[i] = [datas[i].columns.tolist()] + datas[i].values.tolist()
             print(datas[i])
             table = Table(datas[i])
-            table.setStyle(self.permissions_style)
+            dynamic_style = self.permissions_style
+            table.setStyle(dynamic_style)
             # 添加表格到文档，使用 KeepTogether 来确保表格跨页时整体显示在一页上
             Story.append(table)
             Story.append(Spacer(1, 0.2 * inch))
