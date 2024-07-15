@@ -668,7 +668,7 @@ class MLP(nn.Module):
 
 
 class Predictor:
-    def __init__(self, input_size=366, pth_path="model/mlp_model.pth"):
+    def __init__(self, input_size=367, pth_path="model/mlp_model.pth"):
         self.model = MLP(input_size)
         self.checkpoint = torch.load(pth_path)
         self.model.load_state_dict(self.checkpoint['model_state_dict'])
