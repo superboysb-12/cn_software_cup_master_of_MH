@@ -72,13 +72,13 @@ def static_analyzer(uploaded_file):
             data_option = st.selectbox(
                 index=0,
                 label='分析结果',
-                options=['基本信息', '应用权限','相关URL','Class','Activity']
+                options=['基本信息', '应用权限','通联地址','Class','Activity']
             )
             if data_option == '基本信息':
                 st.write(df1)
             elif data_option == '应用权限':
                 st.dataframe(st.session_state['df2'].style.apply(highlight_dangerous, subset=['Security']))
-            elif data_option == '相关URL':
+            elif data_option == '通联地址':
                 st.dataframe(st.session_state['df3'].style.apply(highlight_dangerous, subset=['Security']))
             elif data_option == 'Class':
                 st.write(df4)
