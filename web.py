@@ -279,11 +279,11 @@ def side_bar():
                 if st.session_state['download_method'] == 0:
                     st.info('')
                 elif st.session_state['download_method'] == 1:
-                    st.session_state['download_stats'] = download_apk(1, st.session_state['link'], progress_callback=progress_callback)
+                    st.session_state['download_stats'] = download_apk(method_code=1, url = st.session_state['link'], progress_callback=progress_callback)
                 elif st.session_state['download_method'] ==2:
-                    st.session_state['download_stats'] = download_apk(2, st.session_state['QR_code'], progress_callback=progress_callback)
+                    st.session_state['download_stats'] = download_apk(method_code=2, qrcode = st.session_state['QR_code'], progress_callback=progress_callback)
                 elif st.session_state['download_method'] ==3:
-                    st.session_state['download_stats'] = download_apk(3, st.session_state['web'], progress_callback=progress_callback)
+                    st.session_state['download_stats'] = download_apk(method_code=3, url = st.session_state['web'], progress_callback=progress_callback)
             if 'download_stats' not in st.session_state:
                 st.session_state['download_stats'] = 1
             if st.session_state['download_stats'] == 0:
