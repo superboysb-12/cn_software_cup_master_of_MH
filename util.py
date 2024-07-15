@@ -23,8 +23,6 @@ import streamlit as st
 from urllib.parse import urljoin
 import socket
 
-
-
 #set_log("ERROR")  # set log message only ERROR
 
 APK_SAVE_PATH = r"temp\apk"
@@ -197,7 +195,7 @@ pm = ['android.permission.ACCEPT_HANDOVER', 'android.permission.ACCESS_ADSERVICE
       'android.permission.WRITE_VOICEMAIL', 'android.permission.ZTE_HEARTYSERVICE_MANAGEMENT',
       'android.permission.com.ab.p6768.permission.JPUSH_MESSAGE', 'android.permission.qqmusic.qqcbdm',
       'android.permission.sec.ENTERPRISE_DEVICE_ADMIN', 'android.permission.sec.MDM_CERTIFICATE',
-      'android.permission.sec.MDM_SECURITY', 'android.permission.status_bar','android.permission.MICROPHONE']
+      'android.permission.sec.MDM_SECURITY', 'android.permission.status_bar', 'android.permission.MICROPHONE']
 
 remove_words = ['android', 'launcher', 'permission', 'com', 'const', 'interface', 'content', 'forace', 'Activity',
                 'Service', 'Receiver', 'google', 'get', 'CHANGE', 'USE']
@@ -274,7 +272,7 @@ class my_APK:
         self.icon_save_path = r"temp\icon"
         self.default_icon_path = r"assets\invalid_image.png"
 
-    def get_icon_searching(self, target_path = r"temp\icon"):
+    def get_icon_searching(self, target_path=r"temp\icon"):
         a = self.a
         file_list = a.get_files()
         output_dir = target_path
@@ -582,7 +580,7 @@ class namelist:
 
     def get_list(self, option):
         self.cu.execute(f"select * from {option};")
-        list = pd.DataFrame(self.cu.fetchall(), columns=['ip','url'])
+        list = pd.DataFrame(self.cu.fetchall(), columns=['ip', 'url'])
         return list
 
     def show_tables(self):
@@ -601,7 +599,7 @@ class namelist:
         self.db.commit()
         pass
 
-    def drop_tables(self,option):
+    def drop_tables(self, option):
         if option not in self.tables:
             return False
 
@@ -613,17 +611,13 @@ class namelist:
         self.db.commit()
         return True
 
-
-
-
-    def search_list(self,option,ip=None,url=None):
+    def search_list(self, option, ip=None, url=None):
         if ip and url:
             self.cu.execute(
                 f'''
                 SELECT * FROM {option} WHERE ip = ? and url=?
-                ''', (ip,url)
+                ''', (ip, url)
             )
-
 
         if ip and not url:
             self.cu.execute(
@@ -645,9 +639,6 @@ class namelist:
             return True
         else:
             return False
-
-
-
 
 
 #model util
@@ -927,12 +918,6 @@ def download_single_apk(apk_url, progress_callback=None):
         return -1
 
 
-    except Exception as e:
-        print("发生错误,无法下载APK")
-        print(e)
-        return -1
-
-
 def sliding_window_tokenizer(text, tokenizer, max_length=128, stride=64):
     encoding = tokenizer(text, return_tensors='pt', truncation=False)  # 对文本进行编码
     input_ids = encoding['input_ids'].squeeze(0)  # 获取input_ids并去除批次维度
@@ -946,11 +931,13 @@ def sliding_window_tokenizer(text, tokenizer, max_length=128, stride=64):
         if len(window_input_ids) < max_length:  # 如果当前窗口的长度小于最大长度
             pad_length = max_length - len(window_input_ids)  # 计算需要填充的长度
             window_input_ids = torch.cat([window_input_ids, torch.zeros(pad_length, dtype=torch.long)])  # 填充input_ids
-            window_attention_mask = torch.cat([window_attention_mask, torch.zeros(pad_length, dtype=torch.long)])  # 填充attention_mask
+            window_attention_mask = torch.cat(
+                [window_attention_mask, torch.zeros(pad_length, dtype=torch.long)])  # 填充attention_mask
 
         token_windows.append((window_input_ids, window_attention_mask))  # 将当前窗口加入列表
 
     return token_windows  # 返回所有的token窗口
+
 
 # 定义Bert分类器类
 class BertClassifier5(nn.Module):
@@ -973,6 +960,7 @@ class BertClassifier5(nn.Module):
         linear_output = self.linear(dropout_output)  # 通过线性层
         return linear_output  # 返回输出
 
+
 # 定义加载检查点函数
 def load_checkpoint(model):
     if os.path.exists(CHECKPOINT_FILE):  # 检查检查点文件是否存在
@@ -990,6 +978,7 @@ def load_checkpoint(model):
     else:
         print("No checkpoint found.")
 
+
 # 定义用于预测的类
 class Five_Bert:
     def __init__(self):
@@ -1000,7 +989,7 @@ class Five_Bert:
         load_checkpoint(self.model)  # 加载预训练模型
         self.tokenizer = BertTokenizer.from_pretrained('tokenizer')
 
-          # 设置设备为GPU或CPU
+        # 设置设备为GPU或CPU
         self.model.to(self.device)  # 将模型移动到设备
         if self.use_cuda:
             self.model = nn.DataParallel(self.model).cuda()
@@ -1019,24 +1008,39 @@ class Five_Bert:
         predicted_label = id_to_label[pred]  # 获取预测标签
         return predicted_label
 
+
 def download_apk(method_code=1, url=None, qrcode=None, progress_callback=None):
+    apk_num = 1
+    success_num = 0
+
+    def download_and_count(urls):
+        nonlocal apk_num, success_num
+        if isinstance(urls, str):
+            urls = [urls]
+        apk_num = len(urls)
+        for apk_url in urls:
+            if is_apk_url(apk_url):
+                b = download_single_apk(apk_url, progress_callback)
+                if b == 1:
+                    success_num += 1
+        return apk_num, success_num
+
     if method_code == 1:
         if is_apk_url(url):
             download_single_apk(url, progress_callback)
+            return apk_num, 1
         else:
-            return -1
+            return apk_num, 0
+
     elif method_code == 2:
         urls = get_qrcode(qrcode)
-        if is_apk_url(urls):
-            download_single_apk(urls, progress_callback)
-        else:
-            urls_a = get_all_links(urls)
-            for apk_url in urls_a:
-                download_single_apk(apk_url, progress_callback)
+        if not urls:
+            return apk_num, 0
+        return download_and_count(urls)
+
     elif method_code == 3:
-        urls_a = get_all_links(url)
-        for apk_url in urls_a:
-            download_single_apk(apk_url, progress_callback)
+        urls = get_all_links(url)
+        return download_and_count(urls)
+
     else:
-        pass
-    return check_for_apk()
+        return apk_num, 0
