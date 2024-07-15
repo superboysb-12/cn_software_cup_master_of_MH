@@ -198,7 +198,7 @@ pm = ['android.permission.ACCEPT_HANDOVER', 'android.permission.ACCESS_ADSERVICE
       'android.permission.WRITE_VOICEMAIL', 'android.permission.ZTE_HEARTYSERVICE_MANAGEMENT',
       'android.permission.com.ab.p6768.permission.JPUSH_MESSAGE', 'android.permission.qqmusic.qqcbdm',
       'android.permission.sec.ENTERPRISE_DEVICE_ADMIN', 'android.permission.sec.MDM_CERTIFICATE',
-      'android.permission.sec.MDM_SECURITY', 'android.permission.status_bar']
+      'android.permission.sec.MDM_SECURITY', 'android.permission.status_bar','android.permission.MICROPHONE']
 
 remove_words = ['android', 'launcher', 'permission', 'com', 'const', 'interface', 'content', 'forace', 'Activity',
                 'Service', 'Receiver', 'google', 'get', 'CHANGE', 'USE']
