@@ -24,6 +24,9 @@ if 'TargetAPK' not in st.session_state:
     st.session_state['TargetAPK'] = None
 if 'file_name' not in st.session_state:
     st.session_state['file_name'] = 'None'
+if 'uploaded_file' not in st.session_state:
+    st.session_state['uploaded_file'] = None
+
 
 def highlight_dangerous(s):
     return ['background-color: red' if 'dangerous' in v else '' for v in s]
@@ -287,12 +290,13 @@ def side_bar():
                     st.session_state['download_stats'] = download_apk(method_code=2, qrcode = st.session_state['QR_code'], progress_callback=progress_callback)
                 elif st.session_state['download_method'] ==3:
                     st.session_state['download_stats'] = download_apk(method_code=3, url = st.session_state['web'], progress_callback=progress_callback)
+
             if 'download_stats' not in st.session_state:
-                st.session_state['download_stats'] = 1
-            if st.session_state['download_stats'] == 0:
-                st.success('下载成功')
-            elif st.session_state['download_stats'] == -1:
-                st.error('下载失败')
+                st.session_state['download_stats'] = None
+
+            if st.session_state['download_stats'] is not None:
+                total,success_number = st.session_state['download_stats']
+                st.success('共检测到'+str(total)+'个APK文件,成功下载'+str(success_number)+'个')
             else:
                 pass
 
@@ -303,10 +307,11 @@ def side_bar():
             if chosen_file != '已上传的APK':
                 st.session_state['AnalysisTool'].file_name = chosen_file+'.apk'
             else:
-                uploaded_file = st.session_state['uploaded_file']
-                st.session_state['AnalysisTool'] = AnalysisTool()
-                st.session_state['AnalysisTool'].load_apk_data(uploaded_file.getbuffer())
-                st.session_state['AnalysisTool'].file_name = st.session_state['file_name']
+                if st.session_state['uploaded_file'] :
+                    uploaded_file = st.session_state['uploaded_file']
+                    st.session_state['AnalysisTool'] = AnalysisTool()
+                    st.session_state['AnalysisTool'].load_apk_data(uploaded_file.getbuffer())
+                    st.session_state['AnalysisTool'].file_name = st.session_state['file_name']
 
 
         download()
