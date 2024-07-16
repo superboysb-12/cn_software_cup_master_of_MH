@@ -4,7 +4,6 @@ from androguard.misc import AnalyzeAPK
 import zipfile
 from datetime import datetime
 import pandas as pd
-import io
 import base64
 from transformers import BertTokenizer, BertModel
 import tldextract
@@ -22,12 +21,28 @@ import numpy as np
 import streamlit as st
 from urllib.parse import urljoin
 import socket
+def create_directory_if_not_exists(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+def check_all_directories_and_create():
+    directories = [
+        ['temp'],
+        ['temp','apk'],
+        ['temp','data'],
+        ['temp','icon'],
+        ['temp','PDF'],
+        ['temp','capture']
+    ]
+    for directory in directories:
+        path = os.path.join(*directory)
+        create_directory_if_not_exists(path)
 
 #set_log("ERROR")  # set log message only ERROR
 
-APK_SAVE_PATH = r"temp\apk"
+APK_SAVE_PATH = os.path.join('temp','data')
 
-CHECKPOINT_FILE = 'model/max.pt'
+CHECKPOINT_FILE = os.path.join('model','max.pt')
 labels = {'white': 0, 'sex': 1, 'scam': 2, 'gamble': 3, 'black': 4}
 id_to_label = {v: k for k, v in labels.items()}
 
@@ -251,15 +266,10 @@ def append(file_name, *args):
         for content in args:
             file.write(str(content) + "\n")
 
-
-def create_directory_if_not_exists(directory):
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-
 def save_apk(apk_data):  # -> str save_path
     create_directory_if_not_exists(APK_SAVE_PATH)
-    save_path = APK_SAVE_PATH + '\\' + 'temp' + r".apk"
+
+    save_path =os.path.join(APK_SAVE_PATH,'temp.apk')
     with open(save_path, "wb") as f:
         f.write(apk_data)
     return save_path
@@ -269,10 +279,10 @@ class my_APK:
     def __init__(self, apk_path):
         self.a, self.d, self.dx = AnalyzeAPK(apk_path)
         self.apk_path = apk_path
-        self.icon_save_path = r"temp\icon"
-        self.default_icon_path = r"assets\invalid_image.png"
+        self.icon_save_path = os.path.join('temp','icon')
+        self.default_icon_path = os.path.join('assets','invalid_image.png')
 
-    def get_icon_searching(self, target_path=r"temp\icon"):
+    def get_icon_searching(self, target_path=os.path.join("temp","icon")):
         a = self.a
         file_list = a.get_files()
         output_dir = target_path
@@ -282,9 +292,9 @@ class my_APK:
                 continue
             if file.endswith(".png") or file.endswith(".jpg"):
                 icon_data = a.get_file(file)
-                with open(target_path + '\\' + 'temp' + ".png", "wb") as f:
+                with open(os.path.join(target_path,'temp.png'), "wb") as f:
                     f.write(icon_data)
-                icon_path = target_path + '\\' + 'temp' + ".png"
+                icon_path = os.path.join(target_path,'temp.png')
                 if 'app_icon' in file.lower():
                     break
         return icon_path
@@ -320,9 +330,9 @@ class my_APK:
             return icon_data
         # 将图标数据写入目标文件地址
         create_directory_if_not_exists(target_path)
-        with open(target_path + '\\' + target_name + ".png", "wb") as f:
+        with open( os.path.join(target_path ,target_name + ".png"), "wb") as f:
             f.write(icon_data)
-        return target_path + '\\' + target_name + ".png"
+        return os.path.join(target_path ,target_name + ".png")
 
     def get_permissions_report(self):  # -> DataFrame
         permissions = self.a.get_details_permissions()
@@ -657,7 +667,7 @@ class MLP(nn.Module):
 
 
 class Predictor:
-    def __init__(self, input_size=367, pth_path="model/mlp_model.pth"):
+    def __init__(self, input_size=367, pth_path=os.path.join("model","mlp_model.pth")):
         self.model = MLP(input_size)
         self.checkpoint = torch.load(pth_path)
         self.model.load_state_dict(self.checkpoint['model_state_dict'])
@@ -726,7 +736,7 @@ class BertClassifier(nn.Module):
 
 
 class url_check:
-    def __init__(self, checkpoint_path='model/bert_model.pth'):
+    def __init__(self, checkpoint_path=os.path.join('model','bert_model.pth')):
         self.tokenizer = BertTokenizer.from_pretrained('tokenizer')
         self.model = BertClassifier()
 

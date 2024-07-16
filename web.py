@@ -1,11 +1,13 @@
-import streamlit as st
 import time
-import pandas as pd
-from PIL import Image
+import util
 from util import *
 from dynamic_analysis import PacketCapture
 from AnalysisTool import AnalysisTool
 from androguard.util import  set_log
+
+if 'check_all_directories' not in st.session_state:
+    util.check_all_directories_and_create()
+    st.session_state['check_all_directories'] = True
 
 #streamlit run web.py
 

@@ -1,4 +1,4 @@
-import random
+import os.path
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch
 from reportlab.pdfbase import pdfmetrics
@@ -17,22 +17,28 @@ from func_get_app_information import get_app_information,get_dynamic_analysis_in
 from datetime import datetime
 from util import create_directory_if_not_exists
 #下载库之后要添加宋体文件
-image_path = r"C:\Users\杨子帆\Pictures\Saved Pictures\shield.png" # 图标的路径，这里假设是当前目录下的 icon.png
+
+#path
+TARGET_PATH = os.path.join('temp','PDF')
+create_directory_if_not_exists(TARGET_PATH)
+
+#assets
+ANDROID_PERMISSION_PATH = os.path.join("assets","permissions.csv")
+FONT_PATH_SIMSUN = os.path.join("assets","fonts","simsun.ttc")
+
+ICON_PATH = os.path.join('assets','image','shield.png') # 图标的路径，这里假设是当前目录下的 icon.png
 icon_width = 10
 icon_height = 10
 
 
 current_time = datetime.now()
 scan_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
-TARGET_PATH = r'temp\PDF'
-TARGET_NAME = ''.join([c for c in scan_time if c != ':' and c != '-' and c != ' '])
-ANDROID_PERMISSION_PATH = r"assets\permissions.csv"
-create_directory_if_not_exists(TARGET_PATH)
-
+#TARGET_NAME = ''.join([c for c in scan_time if c != ':' and c != '-' and c != ' '])
+TARGET_NAME = 'temp'
 
 # 注册字体
 song = "simsun"
-pdfmetrics.registerFont(TTFont(song, r"assets\fonts\simsun.ttc"))
+pdfmetrics.registerFont(TTFont(song, FONT_PATH_SIMSUN))
 
 
 #页面大小
@@ -207,7 +213,8 @@ class PDFGenerator():
                         target_name = TARGET_NAME,
                         ):
         # 创建文档
-        doc = SimpleDocTemplate(target_path+'\\'+target_name+'.pdf')
+        doc_path = os.path.join(target_path,target_name+'.pdf')
+        doc = SimpleDocTemplate(doc_path)
         Story = [Spacer(1, -0.1 * inch)]
 
         # 绘制app图标
@@ -218,7 +225,7 @@ class PDFGenerator():
 
         #添加APK INFORMATION部分
         title_text = 'APP INFORMATION'
-        title_with_icon = Paragraph(f'<img src="{image_path}" width="{icon_width}" height="{icon_height}"/> {title_text}', self.titleStyle)
+        title_with_icon = Paragraph(f'<img src="{ICON_PATH}" width="{icon_width}" height="{icon_height}"/> {title_text}', self.titleStyle)
         Story.append(title_with_icon)
         Story.append(Spacer(1, 0.2 * inch))
         t = Table(self.info_data,colWidths=100,rowHeights=15,
@@ -232,7 +239,7 @@ class PDFGenerator():
         Story.append(Spacer(1, 1 * inch))
 
         #添加APK PERMISSIONS部分
-        self.add_title_with_icon(Story,"APK PERMISSIONS",image_path)
+        self.add_title_with_icon(Story,"APK PERMISSIONS",ICON_PATH)
         #Story.append(Paragraph("APK PERMISSIONS", self.titleStyle))
         Story.append(Spacer(1, 0.2 * inch))
         permissions_style = self.permissions_style
@@ -254,11 +261,11 @@ class PDFGenerator():
         Story.append(Spacer(1, 1 * inch))
 
         # 添加APK URL部分
-        self.add_title_with_icon(Story, "APK URL", image_path)
+        self.add_title_with_icon(Story, "APK URL", ICON_PATH)
         Story.append(Spacer(1, 0.2 * inch))
         url = self.url
         url = [url.columns.tolist()] + url.values.tolist()
-        print(url)
+        #print(url)
         table = Table(url)
         url_style = self.permissions_style
         # 根据单元格文本设置特定单元格的样式 高亮危险
@@ -282,15 +289,15 @@ class PDFGenerator():
             return
 
         # 添加dynamic analysis部分
-        self.add_title_with_icon(Story, "DYNAMIC ANALYSIS", image_path)
+        self.add_title_with_icon(Story, "DYNAMIC ANALYSIS", ICON_PATH)
         Story.append(Spacer(1, 0.2 * inch))
         #srcs,dsts,protos,unique_data
         datas = self.dynamic_information
         for i in range(len(datas)):
             datas[i] = [datas[i].columns.tolist()] + datas[i].values.tolist()
-            print(datas[i])
             table = Table(datas[i])
             dynamic_style = self.permissions_style
+            dynamic_style.add('TEXTCOLOR', (0, 0), (-1, -1), colors.black)
             table.setStyle(dynamic_style)
             # 添加表格到文档，使用 KeepTogether 来确保表格跨页时整体显示在一页上
             Story.append(table)

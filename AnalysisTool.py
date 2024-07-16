@@ -7,8 +7,9 @@ import os
 from util import check_url_with_api
 import streamlit as st
 
-local_capture_file = "temp\capture.csv"
-folder_for_downloaded_apk = r"temp\data"
+CAPTURE_CSV_PATH =  os.path.join("temp","capture","capture.csv")
+APK_FOLDER = os.path.join("temp","data")
+
 def convert_to_int(value):
     return int(value)
 
@@ -85,7 +86,7 @@ class AnalysisTool():
             if self.url is not None:
                 generator.load_url(self.url)
         if(dynamic_result and self.dynamic_analysis_finished):
-            generator.load_dynamic_information(local_capture_file)
+            generator.load_dynamic_information(CAPTURE_CSV_PATH)
         generator.generate_report()
 
     def classify_five_label(self):
@@ -113,8 +114,8 @@ class AnalysisTool():
         self.downloaded_apk_data = [(None,'已上传的APK')]
         self.downloaded_apk_names = ['已上传的APK']
 
-        for filename in os.listdir(folder_for_downloaded_apk):
-            file_path = os.path.join(folder_for_downloaded_apk, filename)
+        for filename in os.listdir(APK_FOLDER):
+            file_path = os.path.join(APK_FOLDER, filename)
             if os.path.isfile(file_path):
                 try:
                     with open(file_path, 'rb') as file:

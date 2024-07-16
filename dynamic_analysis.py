@@ -8,17 +8,20 @@ import time
 import os
 '''
 需要关防火墙
-
-
 '''
 
-local_capture_file = 'temp/capture.pcap'
+
+#Local path
+CAPTURE_PATH = os.path.join('temp','capture','capture.pcap')
+CSV_PATH = os.path.join('temp','capture','capture.csv')
+TEMP_CAPTURE_PATH = os.path.join('temp','capture','temp.pcap')
+local_capture_file = os.path.join('temp','capture','capture.pcap')
 
 def root():
     #进行root
     root_cmd = ['adb', 'root']
     result = subprocess.run(root_cmd, capture_output=True, text=True)
-    print(result.stdout)
+    #print(result.stdout)
     sleep(10)#等root
     print('root finish')
 
@@ -110,18 +113,18 @@ class PacketCapture(threading.Thread):
             time.sleep(10)  # 等待一段时间以收集足够的数据包
             stop_tcpdump(proc)
 
-            local_temp_file = 'temp/temp.pcap'
+            local_temp_file = TEMP_CAPTURE_PATH
             check_and_clear_file(local_temp_file)
             pull_file(temp_file, local_temp_file)
             merge_files(local_temp_file, local_capture_file)
 
             # 使用函数转换文件
-            convert_to_csv('temp/capture.pcap', 'temp/capture.csv')
-            file_path = 'temp/capture.csv'
+            convert_to_csv(CAPTURE_PATH, CSV_PATH)
+            file_path = CSV_PATH
 
             if os.path.exists(file_path):
-                self.data = csv_to_dataframe('temp/capture.csv')
-                print(self.data)
+                self.data = csv_to_dataframe(CSV_PATH)
+                #print(self.data)
 
     def stop(self):
         self._stop_event.set()
