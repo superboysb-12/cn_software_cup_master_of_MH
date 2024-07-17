@@ -313,7 +313,7 @@ def side_bar():
             else:
                 if st.session_state['uploaded_file'] :
                     uploaded_file = st.session_state['uploaded_file']
-                    st.session_state['AnalysisTool'] = AnalysisTool()
+                    #st.session_state['AnalysisTool'] = AnalysisTool()
                     st.session_state['AnalysisTool'].load_apk_data(uploaded_file.getbuffer())
                     st.session_state['AnalysisTool'].file_name = st.session_state['file_name']
 
