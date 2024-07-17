@@ -31,7 +31,8 @@ class AnalysisTool():
 
     def load_apk_data(self,original_data):
         if self.target_apk != original_data:
-            self.__init__()
+            #self.__init__()
+            pass
         self.target_apk = original_data
 
     def static_analysis(self,progress_callback):
@@ -113,8 +114,9 @@ class AnalysisTool():
     def check_downloaded_apk(self):
         self.downloaded_apk_data = [(None,'已上传的APK')]
         self.downloaded_apk_names = ['已上传的APK']
-
+        print(APK_FOLDER)
         for filename in os.listdir(APK_FOLDER):
+            print(filename)
             file_path = os.path.join(APK_FOLDER, filename)
             if os.path.isfile(file_path):
                 try:
