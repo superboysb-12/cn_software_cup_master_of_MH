@@ -293,12 +293,14 @@ def side_bar():
                 elif st.session_state['download_method'] ==3:
                     st.session_state['download_stats'] = download_apk(method_code=3, url = st.session_state['web'], progress_callback=progress_callback)
 
+
             if 'download_stats' not in st.session_state:
                 st.session_state['download_stats'] = None
 
             if st.session_state['download_stats'] is not None:
                 total,success_number = st.session_state['download_stats']
                 st.success('共检测到'+str(total)+'个APK文件,成功下载'+str(success_number)+'个')
+                st.session_state['AnalysisTool'].check_downloaded_apk()
             else:
                 pass
 
