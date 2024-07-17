@@ -873,6 +873,7 @@ def is_apk_url(url):
 
 
 def get_qrcode(image_binary):
+    print("调用二维码函数成功！")
     nparr = np.frombuffer(image_binary, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     decoded_objects = decode(img)
@@ -902,6 +903,7 @@ def sanitize_and_validate_filename(filename):
 def download_single_apk(apk_url, progress_callback=None):
     if is_apk_url(apk_url) == False:
         return -1
+    print(apk_url)
 
     save_path = sanitize_and_validate_filename(os.path.basename(apk_url))
     save_path = os.path.join(data_dir, save_path)
@@ -1048,9 +1050,11 @@ def download_apk(method_code=1, url=None, qrcode=None, progress_callback=None):
 
     elif method_code == 2:
         urls = get_qrcode(qrcode)
+        print(urls)
         if not urls:
             return apk_num, 0
-        return download_and_count(urls)
+        download_single_apk(urls, progress_callback)
+        return apk_num,1
 
     elif method_code == 3:
         urls = get_all_links(url)
