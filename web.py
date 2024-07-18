@@ -198,10 +198,6 @@ def dynamic_analyzer():
 
         st.session_state['dynamic_completed'] = True
 
-        if st.button('添加到黑/白名单'):
-            #add_list(IPs)
-            st.success('添加成功')
-            pass
 
 
 

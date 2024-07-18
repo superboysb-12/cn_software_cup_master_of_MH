@@ -35,7 +35,7 @@ class AnalysisTool():
         self.app_information = None
         self.check_downloaded_apk()
         self.file_name = 'None'
-        self.namelist = None
+        self.namelist = 'None'
         self.lists = namelist()
         self.filtered_url = {}
         print('Analysis tool initialized')
@@ -126,9 +126,9 @@ class AnalysisTool():
     def check_downloaded_apk(self):
         self.downloaded_apk_data = [(None,'已上传的APK')]
         self.downloaded_apk_names = ['已上传的APK']
-        print(APK_FOLDER)
+        #print(APK_FOLDER)
         for filename in os.listdir(APK_FOLDER):
-            print(filename)
+            #print(filename)
             file_path = os.path.join(APK_FOLDER, filename)
             if os.path.isfile(file_path):
                 try:
@@ -157,11 +157,12 @@ class AnalysisTool():
         with lock:
             filtered_url = {}
             list = self.namelist
-            print(list)
+            #print('名单名称: ',list)
+
             for u in self.raw_url:
-                filtered = False
-                if list is not None:
-                    filtered = 'yes' if self.lists.search_list(list, ip=None, url=u) else 'no'
+                filtered = 'No'
+                #print(list,u)
+                filtered = 'Yes' if self.lists.search_list(list, ip=None, url=u) else 'No'
                 filtered_url[u] = filtered
             self.filtered_url = filtered_url
 
