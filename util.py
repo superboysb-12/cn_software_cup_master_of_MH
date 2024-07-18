@@ -856,12 +856,14 @@ def get_all_links(url):
 
 
 def is_apk_url(url):
+    print(url)
     if url.endswith('.apk'):
         return True
     else:
         try:
             response = requests.head(url)
             content_type = response.headers.get('Content-Type')
+            print(content_type)
 
             if content_type == 'application/vnd.android.package-archive':
                 return True
@@ -879,7 +881,7 @@ def get_qrcode(image_binary):
     decoded_objects = decode(img)
     for obj in decoded_objects:
         if obj.type == 'QRCODE':
-            return obj.data.decode('GBK')
+            return obj.data.decode('ascii')
     return None
 
 
@@ -903,7 +905,6 @@ def sanitize_and_validate_filename(filename):
 def download_single_apk(apk_url, progress_callback=None):
     if is_apk_url(apk_url) == False:
         return -1
-    print(apk_url)
 
     save_path = sanitize_and_validate_filename(os.path.basename(apk_url))
     save_path = os.path.join(data_dir, save_path)
@@ -927,11 +928,50 @@ def download_single_apk(apk_url, progress_callback=None):
                         print(f"\r正在下载中: {progress:.2f}%", end="")
 
         print("\n下载完成！")
-        return 0
+        return 1
     except Exception as e:
         print("发生错误,无法下载APK")
         print(e)
         return -1
+
+def download_apk(method_code=1, url=None, qrcode=None, progress_callback=None):
+    apk_num = 1
+    success_num = 0
+
+    def download_and_count(urls):
+        nonlocal apk_num, success_num
+        if isinstance(urls, str):
+            urls = [urls]
+        apk_num = len(urls)
+        for apk_url in urls:
+            if is_apk_url(apk_url):
+                b = download_single_apk(apk_url, progress_callback)
+                if b == 1:
+                    success_num += 1
+        return apk_num, success_num
+
+    if method_code == 1:
+        if is_apk_url(url):
+            download_single_apk(url, progress_callback)
+            return apk_num, 1
+        else:
+            return apk_num, 0
+
+    elif method_code == 2:
+        urls = get_qrcode(qrcode)
+        if not urls:
+            return apk_num, 0
+        if download_single_apk(urls, progress_callback)==-1:
+
+            return apk_num,0
+        return apk_num,1
+
+    elif method_code == 3:
+        urls = get_all_links(url)
+        return download_and_count(urls)
+
+    else:
+        return apk_num, 0
 
 
 def sliding_window_tokenizer(text, tokenizer, max_length=128, stride=64):
@@ -1025,40 +1065,3 @@ class Five_Bert:
         return predicted_label
 
 
-def download_apk(method_code=1, url=None, qrcode=None, progress_callback=None):
-    apk_num = 1
-    success_num = 0
-
-    def download_and_count(urls):
-        nonlocal apk_num, success_num
-        if isinstance(urls, str):
-            urls = [urls]
-        apk_num = len(urls)
-        for apk_url in urls:
-            if is_apk_url(apk_url):
-                b = download_single_apk(apk_url, progress_callback)
-                if b == 1:
-                    success_num += 1
-        return apk_num, success_num
-
-    if method_code == 1:
-        if is_apk_url(url):
-            download_single_apk(url, progress_callback)
-            return apk_num, 1
-        else:
-            return apk_num, 0
-
-    elif method_code == 2:
-        urls = get_qrcode(qrcode)
-        print(urls)
-        if not urls:
-            return apk_num, 0
-        download_single_apk(urls, progress_callback)
-        return apk_num,1
-
-    elif method_code == 3:
-        urls = get_all_links(url)
-        return download_and_count(urls)
-
-    else:
-        return apk_num, 0
