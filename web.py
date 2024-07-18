@@ -78,6 +78,12 @@ def static_analyzer(uploaded_file):
                 (st.session_state['df1'],st.session_state['df2'],st.session_state['df3'],st.session_state['df4'],st.session_state['df5'],st.session_state['image']),st.session_state['apk_path'] = st.session_state['AnalysisTool'].get_static_analysis_information(static_callback)
                 st.session_state['image']=st.session_state['image'][0]
 
+            url_df = st.session_state['df3']
+            for i in range(len(url_df)):
+                url_df['Filtered'][i] = 'Yes' if list.search_list(option,None,url_df['url'][i]) else 'No'
+
+            st.session_state['df3'] = url_df
+
             st.session_state['static_analysis'] = True
             st.session_state['static_completed'] = True
 

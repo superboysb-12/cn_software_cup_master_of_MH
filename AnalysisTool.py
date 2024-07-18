@@ -153,23 +153,9 @@ class AnalysisTool():
         print('no apk found')
 
 
-    def filter_url(self):
-        with lock:
-            filtered_url = {}
-            list = self.namelist
-            #print('名单名称: ',list)
 
-            for u in self.raw_url:
-                filtered = 'No'
-                #print(list,u)
-                filtered = 'Yes' if self.lists.search_list(list, ip=None, url=u) else 'No'
-                filtered_url[u] = filtered
-            self.filtered_url = filtered_url
 
     def classify_url(self):
-        thread = threading.Thread(target=self.filter_url)
-        thread.start()
-        thread.join()
         output = []
         urlClassifier = url_check()
         url_filter = self.filtered_url
