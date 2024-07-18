@@ -135,8 +135,7 @@ def dynamic_analyzer():
         st.session_state['dynamic_completed'] = False
     if 'capturing' not in st.session_state:
         st.session_state['capturing'] = 0
-    if 'capture_pkts' not in st.session_state:
-        st.session_state['capture_pkts'] = None
+
 
     st.header('动态分析模式')
     show_pkts = st.empty()
@@ -145,11 +144,20 @@ def dynamic_analyzer():
     if 'capture_thread' not in st.session_state:
         st.session_state['capture_thread'] = PacketCapture()
 
+    list = namelist()
+    option = st.selectbox(
+        label='选择用于过滤的黑白名单',
+        options=list.show_tables()
+    )
+
     if st.button('开始抓包'):
         st.session_state['AnalysisTool'].dynamic_analysis()
         st.session_state['capturing'] = 1
         if not st.session_state['capture_thread'].is_alive():
             st.session_state['capture_thread'].start()
+
+    if 'capture_pkts' not in st.session_state:
+        st.session_state['capture_pkts'] = None
 
     if st.session_state['capture_thread']:
         st.session_state['capture_pkts'] = st.session_state['capture_thread'].get_data()
@@ -168,7 +176,8 @@ def dynamic_analyzer():
     # 实时更新抓包数据显示
     while st.session_state['capturing'] == 1:
         st.session_state['capture_pkts'] = st.session_state['capture_thread'].get_data()  # 获取最新抓包数据
-        show_pkts.write(st.session_state['capture_pkts'])  # 更新显示最新抓包数据
+        if st.session_state['capture_pkts'] is not None:
+            show_pkts.write(st.session_state['capture_pkts'])  # 更新显示最新抓包数据
         time.sleep(1)  # 调整间隔时间，以控制实时显示频率
 
     # 停止抓包后
@@ -176,6 +185,15 @@ def dynamic_analyzer():
         show_pkts.write(st.session_state['capture_pkts'])  # 显示最终抓包数据
 
         IPs = st.session_state['capture_pkts'][st.session_state['capture_pkts'].columns[2]].value_counts()
+        IPs = IPs.reset_index()
+        IPs.columns = ['IP', 'Count']#转为Dataframe
+        IPs['Filtered'] = IPs['IP']
+        def func(ip):
+            return 'Yes' if list.search_list(option, str(ip)) else 'No'
+        for i in range(len(IPs)):
+            IPs['Filtered'][i] = func(IPs['IP'][i])
+
+
         st.write(IPs)
 
         st.session_state['dynamic_completed'] = True
