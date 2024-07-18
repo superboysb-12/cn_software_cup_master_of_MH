@@ -40,7 +40,7 @@ def check_all_directories_and_create():
 
 #set_log("ERROR")  # set log message only ERROR
 
-APK_SAVE_PATH = os.path.join('temp','data')
+APK_SAVE_PATH = os.path.join('temp','apk')
 
 CHECKPOINT_FILE = os.path.join('model','max.pt')
 labels = {'white': 0, 'sex': 1, 'scam': 2, 'gamble': 3, 'black': 4}

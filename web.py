@@ -63,6 +63,12 @@ def static_analyzer(uploaded_file):
 
 
     st.header('静态分析模式')
+    list = namelist()
+    option = st.selectbox(
+        label='选择用于过滤的黑白名单',
+        options=list.show_tables()
+    )
+    st.session_state['AnalysisTool'].namelist = option
     if st.button('开始分析'):
         st.session_state['static_progress'] = []
         if st.session_state['AnalysisTool'].target_apk is None:

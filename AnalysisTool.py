@@ -6,9 +6,16 @@ from  util import Predictor,url_check,Five_Bert
 import os
 from util import check_url_with_api
 import streamlit as st
+from util import namelist
+import threading
+
+
+# 创建一个锁对象
+lock = threading.Lock()
 
 CAPTURE_CSV_PATH =  os.path.join("temp","capture","capture.csv")
 APK_FOLDER = os.path.join("temp","data")
+
 
 def convert_to_int(value):
     return int(value)
@@ -24,9 +31,13 @@ class AnalysisTool():
         self.five_label = '未识别'
         self.tool = None
         self.url = None
+        self.raw_url = None
         self.app_information = None
         self.check_downloaded_apk()
         self.file_name = 'None'
+        self.namelist = None
+        self.lists = namelist()
+        self.filtered_url = {}
         print('Analysis tool initialized')
 
     def load_apk_data(self,original_data):
@@ -45,6 +56,7 @@ class AnalysisTool():
         self.two_label = self.app_information['two_label']
         self.url = self.app_information['url'][0]
         self.url = self.url[1:]
+        self.raw_url = self.url.copy()
         self.app_information['file_name'] = self.file_name
         self.static_analysis_finished = True
 
@@ -140,9 +152,26 @@ class AnalysisTool():
                 return
         print('no apk found')
 
+
+    def filter_url(self):
+        with lock:
+            filtered_url = {}
+            list = self.namelist
+            print(list)
+            for u in self.raw_url:
+                filtered = False
+                if list is not None:
+                    filtered = 'yes' if self.lists.search_list(list, ip=None, url=u) else 'no'
+                filtered_url[u] = filtered
+            self.filtered_url = filtered_url
+
     def classify_url(self):
+        thread = threading.Thread(target=self.filter_url)
+        thread.start()
+        thread.join()
         output = []
         urlClassifier = url_check()
+        url_filter = self.filtered_url
 
         def process_url(u):
             api_output = check_url_with_api(u)
@@ -151,7 +180,7 @@ class AnalysisTool():
 
             reputation_value = int(reputation) if reputation is not None else 0
 
-            return [u, 'dangerous' if label else 'normal', reputation_value]
+            return [u, 'dangerous' if label else 'normal', reputation_value,url_filter[u] if u in url_filter else 'no']
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [executor.submit(process_url, u) for u in self.url]
@@ -160,7 +189,7 @@ class AnalysisTool():
                 result = future.result()
                 output.append(result)
 
-        output_df = pd.DataFrame(output, columns=['url', 'Security', 'Reputation'])
+        output_df = pd.DataFrame(output, columns=['url', 'Security', 'Reputation','Filtered'])
         output_df['Reputation'] = output_df['Reputation'].apply(convert_to_int)
 
         self.url = output_df
