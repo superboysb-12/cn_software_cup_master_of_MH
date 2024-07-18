@@ -18,6 +18,8 @@ from datetime import datetime
 from util import create_directory_if_not_exists
 #下载库之后要添加宋体文件
 
+#Fraud Category
+
 #path
 TARGET_PATH = os.path.join('temp','PDF')
 create_directory_if_not_exists(TARGET_PATH)
@@ -263,14 +265,14 @@ class PDFGenerator():
         # 添加APK URL部分
         self.add_title_with_icon(Story, "APK URL", ICON_PATH)
         Story.append(Spacer(1, 0.2 * inch))
-        url = self.url
+        url = self.url.loc[:,['url','Security','Reputation']]
         url = [url.columns.tolist()] + url.values.tolist()
         #print(url)
         table = Table(url)
         url_style = self.permissions_style
         # 根据单元格文本设置特定单元格的样式 高亮危险
         for row in range(1, len(url)):
-            for col in range(1,len(url[row]) - 1):
+            for col in range(1,2):
                 if 'dangerous' in url[row][col]:
                     url_style.add('TEXTCOLOR', (col, row), (col, row), colors.red)
                 if 'normal' in url[row][col]:
