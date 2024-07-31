@@ -516,7 +516,7 @@ class my_APK:
         text += process_string(get_first_500_chars(str(self.get_receivers()))) + " "
         text += process_string(get_first_500_chars(str(self.get_providers()))) + " "
         text += process_string(str(self.get_android_manifest_axml())) + " "
-        text += process_string(get_first_500_chars(str(self.get_instructions()))) + " "
+        # text += process_string(get_first_500_chars(str(self.get_instructions()))) + " "
         text += process_string(get_first_500_chars(str(self.get_classes()))) + " "
         text += process_string(get_first_500_chars(str(self.get_methods()))) + " "
         text += process_string(get_first_500_chars(str(self.get_fields())))
