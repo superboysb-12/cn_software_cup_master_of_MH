@@ -2,14 +2,15 @@ import pandas as pd
 import concurrent.futures
 from func_get_app_information import  get_app_information,get_dynamic_analysis_information
 from PDFGenerator import  PDFGenerator
-from  util import Predictor,url_check,Five_Bert
+from  util import Predictor,url_check
 import os
 from util import check_url_with_api
 import streamlit as st
 from util import namelist
 import threading
+import ollama
 
-
+MODEL_NAME = "lama"
 # 创建一个锁对象
 lock = threading.Lock()
 
@@ -103,9 +104,24 @@ class AnalysisTool():
         generator.generate_report()
 
     def classify_five_label(self):
-        model = Five_Bert()  # 五分类模型
         five_info = self.tool.get_five_info()
-        self.five_label = model.predict(five_info)
+        types = ["white", "black", "gamble", "sex", "scam"]
+        model_name = MODEL_NAME
+        send_massage = five_info
+        res = ollama.chat(model=model_name,
+                          stream=False,
+                          messages=[{"role": "user", "content": send_massage}],
+                          options={"temperature": 0, "num_keep": 1})
+        output = res['message'].content
+        # 限制output为types中的一个类型
+        # 如果output中包含types中的类型,则将其设置为types中的一个类型
+        type = "未识别"
+        for t in types:
+            if t in output:
+                output = t
+                type = t
+                break
+        self.five_label = type
         if self.app_information is not None:
             self.app_information['five_label'] = self.five_label
 
